@@ -53,7 +53,7 @@ export default function Page() {
           <a
             target="_blank"
             rel="noopener"
-            href="https://findit-mj.sentry.io/issues/?project=4511295385698304"
+            href="https://alcohol-label.sentry.io/issues/?project=4511295385698304"
           >
             Issues Page
           </a>

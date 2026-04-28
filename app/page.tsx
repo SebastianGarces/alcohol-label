@@ -1,14 +1,31 @@
-export default function Home() {
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { VerifierClient } from "@/components/verifier/VerifierClient";
+import { SampleManifest } from "@/lib/schema/sample";
+
+async function loadSamples() {
+  try {
+    const buf = await readFile(join(process.cwd(), "public/samples/samples.json"), "utf8");
+    return SampleManifest.parse(JSON.parse(buf));
+  } catch {
+    return [];
+  }
+}
+
+export default async function Home() {
+  const samples = await loadSamples();
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-start gap-6 px-6 py-24">
-      <h1 className="text-4xl font-semibold tracking-tight text-foreground">TTB Label Verifier</h1>
-      <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
-        Compare alcohol label artwork against your application data. Upload a label image and a few
-        application fields, and we&apos;ll flag mismatches before TTB does.
-      </p>
-      <p className="text-sm text-muted-foreground">
-        Phase 1 placeholder. Single-label flow ships in Phase 2.
-      </p>
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-12">
+      <header className="flex flex-col gap-2">
+        <h1 className="text-4xl font-semibold tracking-tight text-foreground">
+          TTB Label Verifier
+        </h1>
+        <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground">
+          Compare alcohol label artwork to your application data. Upload a label and a few fields,
+          and we'll surface mismatches and warning-statement issues before TTB does.
+        </p>
+      </header>
+      <VerifierClient samples={samples} />
     </main>
   );
 }

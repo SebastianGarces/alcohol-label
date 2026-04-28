@@ -1,0 +1,73 @@
+[
+  {
+    "filename": "01-clean-bourbon.jpg",
+    "label": "Clean bourbon (all fields match)",
+    "expectedStatus": "pass",
+    "applicationData": {
+      "beverageType": "distilled_spirits",
+      "brandName": "Stone's Throw",
+      "classType": "Kentucky Straight Bourbon Whiskey",
+      "alcoholContent": "45%",
+      "netContents": "750 mL",
+      "bottlerName": "Stone's Throw Distillery",
+      "bottlerAddress": "123 Main Street, Louisville, KY"
+    }
+  },
+  {
+    "filename": "02-stones-throw.jpg",
+    "label": "Smart match (STONE'S THROW vs Stone's Throw)",
+    "expectedStatus": "review",
+    "applicationData": {
+      "beverageType": "distilled_spirits",
+      "brandName": "Stone's Throw",
+      "classType": "Kentucky Straight Bourbon Whiskey",
+      "alcoholContent": "45%",
+      "netContents": "750 mL",
+      "bottlerName": "Stone's Throw Distillery",
+      "bottlerAddress": "123 Main Street, Louisville, KY"
+    }
+  },
+  {
+    "filename": "03-title-case-warning.jpg",
+    "label": "Title-case warning header (FAIL)",
+    "expectedStatus": "fail",
+    "expectedFailures": ["header_not_all_caps", "header_not_bold"],
+    "applicationData": {
+      "beverageType": "distilled_spirits",
+      "brandName": "Stone's Throw",
+      "classType": "Kentucky Straight Bourbon Whiskey",
+      "alcoholContent": "45%",
+      "netContents": "750 mL",
+      "bottlerName": "Stone's Throw Distillery",
+      "bottlerAddress": "123 Main Street, Louisville, KY"
+    }
+  },
+  {
+    "filename": "04-wrong-abv.jpg",
+    "label": "Wrong ABV (label 40%, application 45%)",
+    "expectedStatus": "fail",
+    "applicationData": {
+      "beverageType": "distilled_spirits",
+      "brandName": "Stone's Throw",
+      "classType": "Kentucky Straight Bourbon Whiskey",
+      "alcoholContent": "45%",
+      "netContents": "750 mL",
+      "bottlerName": "Stone's Throw Distillery",
+      "bottlerAddress": "123 Main Street, Louisville, KY"
+    }
+  },
+  {
+    "filename": "05-rotated-bourbon.jpg",
+    "label": "Sideways photo (EXIF auto-orient)",
+    "expectedStatus": "pass",
+    "applicationData": {
+      "beverageType": "distilled_spirits",
+      "brandName": "Stone's Throw",
+      "classType": "Kentucky Straight Bourbon Whiskey",
+      "alcoholContent": "45%",
+      "netContents": "750 mL",
+      "bottlerName": "Stone's Throw Distillery",
+      "bottlerAddress": "123 Main Street, Louisville, KY"
+    }
+  }
+]

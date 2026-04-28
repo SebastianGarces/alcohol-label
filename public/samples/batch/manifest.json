@@ -1,0 +1,149 @@
+{
+  "generatedAt": "2026-04-28T04:54:21.101Z",
+  "rows": [
+    {
+      "filename": "01-stones-throw-bourbon.jpg",
+      "brand": "Stone's Throw",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "02-black-pine-malt.jpg",
+      "brand": "Black Pine",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "03-wildflower-vodka.jpg",
+      "brand": "Wildflower Reserve",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "04-copperhead-tn-whiskey.jpg",
+      "brand": "Copperhead",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "05-iron-crown-gin.jpg",
+      "brand": "Iron Crown",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "06-stones-throw-allcaps.jpg",
+      "brand": "Stone's Throw",
+      "beverageType": "distilled_spirits",
+      "expected": "review"
+    },
+    {
+      "filename": "07-salt-marsh-rum.jpg",
+      "brand": "Salt Marsh",
+      "beverageType": "distilled_spirits",
+      "expected": "fail"
+    },
+    {
+      "filename": "08-rolling-glen-bourbon.jpg",
+      "brand": "Rolling Glen",
+      "beverageType": "distilled_spirits",
+      "expected": "fail"
+    },
+    {
+      "filename": "09-old-anchor-rye.jpg",
+      "brand": "Old Anchor",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "10-velvet-crow-tequila.jpg",
+      "brand": "Velvet Crow",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "11-hollow-oak-cab.jpg",
+      "brand": "Hollow Oak",
+      "beverageType": "wine",
+      "expected": "pass"
+    },
+    {
+      "filename": "12-cedar-hill-pinot.jpg",
+      "brand": "Cedar Hill",
+      "beverageType": "wine",
+      "expected": "pass"
+    },
+    {
+      "filename": "13-riverbend-chardonnay.jpg",
+      "brand": "Riverbend",
+      "beverageType": "wine",
+      "expected": "pass"
+    },
+    {
+      "filename": "14-sunwood-sauvblanc.jpg",
+      "brand": "Sunwood",
+      "beverageType": "wine",
+      "expected": "pass"
+    },
+    {
+      "filename": "15-hollow-oak-allcaps.jpg",
+      "brand": "Hollow Oak",
+      "beverageType": "wine",
+      "expected": "review"
+    },
+    {
+      "filename": "16-glass-mountain-merlot.jpg",
+      "brand": "Glass Mountain",
+      "beverageType": "wine",
+      "expected": "pass"
+    },
+    {
+      "filename": "17-westcliff-rose.jpg",
+      "brand": "Westcliff",
+      "beverageType": "wine",
+      "expected": "pass"
+    },
+    {
+      "filename": "18-stargazer-riesling.jpg",
+      "brand": "Stargazer",
+      "beverageType": "wine",
+      "expected": "pass"
+    },
+    {
+      "filename": "19-north-pier-ipa.jpg",
+      "brand": "North Pier",
+      "beverageType": "malt_beverage",
+      "expected": "pass"
+    },
+    {
+      "filename": "20-tall-oak-pilsner.jpg",
+      "brand": "Tall Oak",
+      "beverageType": "malt_beverage",
+      "expected": "pass"
+    },
+    {
+      "filename": "21-sundown-stout.jpg",
+      "brand": "Sundown",
+      "beverageType": "malt_beverage",
+      "expected": "pass"
+    },
+    {
+      "filename": "22-brick-mill-lager.jpg",
+      "brand": "Brick Mill",
+      "beverageType": "malt_beverage",
+      "expected": "pass"
+    },
+    {
+      "filename": "23-north-pier-allcaps.jpg",
+      "brand": "North Pier",
+      "beverageType": "malt_beverage",
+      "expected": "review"
+    },
+    {
+      "filename": "24-tall-oak-wrong-abv.jpg",
+      "brand": "Tall Oak",
+      "beverageType": "malt_beverage",
+      "expected": "fail"
+    }
+  ]
+}
