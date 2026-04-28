@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "Sentry": {
-      "url": "https://mcp.sentry.dev/mcp/findit-mj/alcohol-label"
+      "url": "https://mcp.sentry.dev/mcp/alcohol-label/alcohol-label"
     }
   }
 }

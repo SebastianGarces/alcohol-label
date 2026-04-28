@@ -9,7 +9,7 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: "findit-mj",
+  org: "alcohol-label",
 
   project: "alcohol-label",
 
