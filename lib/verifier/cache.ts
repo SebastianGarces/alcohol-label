@@ -26,3 +26,11 @@ export function set(hash: string, applicationKey: string, value: VerificationRes
     if (oldest) cache.delete(oldest);
   }
 }
+
+// Test/eval seam: drop all cached entries. Production code never calls this —
+// the cache is process-local and rotates by LRU. The eval harness needs it
+// between mode runs so that swapping the model dependency actually re-extracts
+// against the live VLMs instead of returning the previous mode's cached result.
+export function clear(): void {
+  cache.clear();
+}

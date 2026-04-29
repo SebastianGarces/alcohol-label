@@ -10,7 +10,10 @@
     "format": "biome format --write .",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "eval": "bun eval/index.ts --mode=tiered",
+    "eval:compare": "bun eval/index.ts --mode=tiered,haiku-only,sonnet-only",
+    "eval:dry": "bun eval/index.ts --mode=tiered --dry-run"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
