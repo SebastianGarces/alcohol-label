@@ -57,6 +57,24 @@ export type WarningResult = z.infer<typeof WarningResult>;
 export const OverallStatus = z.enum(["pass", "review", "fail"]);
 export type OverallStatus = z.infer<typeof OverallStatus>;
 
+export const VerificationTelemetryCall = z.object({
+  purpose: z.enum(["extract", "warning", "escalate", "tiebreak"]),
+  model: z.string(),
+  latencyMs: z.number(),
+  inputTokens: z.number(),
+  outputTokens: z.number(),
+  cachedInputTokens: z.number(),
+  costUsd: z.number(),
+});
+export type VerificationTelemetryCall = z.infer<typeof VerificationTelemetryCall>;
+
+export const VerificationTelemetry = z.object({
+  totalLatencyMs: z.number(),
+  totalCostUsd: z.number(),
+  calls: z.array(VerificationTelemetryCall),
+});
+export type VerificationTelemetry = z.infer<typeof VerificationTelemetry>;
+
 export const VerificationError = z.enum([
   "not_alcohol_label",
   "image_too_dark",
@@ -87,6 +105,7 @@ export const VerificationResult = z.object({
       meanBrightness: z.number(),
     })
     .optional(),
+  telemetry: VerificationTelemetry.optional(),
 });
 export type VerificationResult = z.infer<typeof VerificationResult>;
 

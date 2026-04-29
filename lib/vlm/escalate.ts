@@ -4,11 +4,12 @@ import type { FieldKey } from "@/lib/schema/application";
 import type { ExtractedField } from "@/lib/schema/extract";
 import {
   buildImageUserMessage,
-  callChat,
+  callChatWithTelemetry,
   parseToolCallArguments,
   type VlmCallOptions,
+  type VlmCallResult,
 } from "./call";
-import { MODELS } from "./models";
+import { MODELS, type ModelSlug } from "./models";
 
 const TOOL_NAME = "extract_field";
 
@@ -21,10 +22,11 @@ export async function escalateField(
   dataUrl: string,
   field: FieldKey,
   options: VlmCallOptions = {},
-): Promise<ExtractedField> {
-  const completion = await callChat(
+  model: ModelSlug = MODELS.SONNET,
+): Promise<VlmCallResult<ExtractedField>> {
+  const { completion, telemetry } = await callChatWithTelemetry(
     {
-      model: MODELS.SONNET,
+      model,
       max_tokens: 256,
       temperature: 0,
       messages: [
@@ -51,8 +53,10 @@ export async function escalateField(
       ],
       tool_choice: { type: "function", function: { name: TOOL_NAME } },
     },
+    model,
     options,
   );
 
-  return SingleField.parse(parseToolCallArguments(completion, TOOL_NAME));
+  const value = SingleField.parse(parseToolCallArguments(completion, TOOL_NAME));
+  return { value, telemetry };
 }

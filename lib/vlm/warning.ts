@@ -2,11 +2,12 @@ import { z } from "zod";
 import { WarningExtract } from "@/lib/schema/extract";
 import {
   buildImageUserMessage,
-  callChat,
+  callChatWithTelemetry,
   parseToolCallArguments,
   type VlmCallOptions,
+  type VlmCallResult,
 } from "./call";
-import { MODELS } from "./models";
+import { MODELS, type ModelSlug } from "./models";
 
 const TOOL_NAME = "extract_warning";
 
@@ -22,10 +23,14 @@ const PROMPT =
   "Find the government health warning on this label. " +
   "Use the extract_warning tool to report the verbatim text and the formatting flags.";
 
-export async function extractWarning(dataUrl: string, options: VlmCallOptions = {}) {
-  const completion = await callChat(
+export async function extractWarning(
+  dataUrl: string,
+  options: VlmCallOptions = {},
+  model: ModelSlug = MODELS.SONNET,
+): Promise<VlmCallResult<WarningExtract>> {
+  const { completion, telemetry } = await callChatWithTelemetry(
     {
-      model: MODELS.SONNET,
+      model,
       max_tokens: 1024,
       temperature: 0,
       messages: [
@@ -44,9 +49,10 @@ export async function extractWarning(dataUrl: string, options: VlmCallOptions = 
       ],
       tool_choice: { type: "function", function: { name: TOOL_NAME } },
     },
+    model,
     options,
   );
 
   const args = parseToolCallArguments(completion, TOOL_NAME);
-  return WarningExtract.parse(args);
+  return { value: WarningExtract.parse(args), telemetry };
 }

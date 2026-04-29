@@ -1,8 +1,13 @@
 import { z } from "zod";
 import { fieldLabel } from "@/lib/match/field";
 import type { FieldKey } from "@/lib/schema/application";
-import { callChat, parseToolCallArguments, type VlmCallOptions } from "./call";
-import { MODELS } from "./models";
+import {
+  callChatWithTelemetry,
+  parseToolCallArguments,
+  type VlmCallOptions,
+  type VlmCallResult,
+} from "./call";
+import { MODELS, type ModelSlug } from "./models";
 
 const TOOL_NAME = "tiebreak_decision";
 
@@ -17,7 +22,8 @@ export async function tiebreak(
   applicationValue: string,
   labelValue: string,
   options: VlmCallOptions = {},
-): Promise<TiebreakDecision> {
+  model: ModelSlug = MODELS.SONNET,
+): Promise<VlmCallResult<TiebreakDecision>> {
   const prompt =
     `Two strings refer to the ${fieldLabel(field)} on a TTB label submission. ` +
     `Application: ${JSON.stringify(applicationValue)}. ` +
@@ -25,9 +31,9 @@ export async function tiebreak(
     "Are they the same value, allowing for ordinary case, punctuation, and whitespace differences " +
     "but not for substantive word changes? Use the tiebreak_decision tool.";
 
-  const completion = await callChat(
+  const { completion, telemetry } = await callChatWithTelemetry(
     {
-      model: MODELS.SONNET,
+      model,
       max_tokens: 256,
       temperature: 0,
       messages: [
@@ -52,8 +58,10 @@ export async function tiebreak(
       ],
       tool_choice: { type: "function", function: { name: TOOL_NAME } },
     },
+    model,
     options,
   );
 
-  return Decision.parse(parseToolCallArguments(completion, TOOL_NAME));
+  const value = Decision.parse(parseToolCallArguments(completion, TOOL_NAME));
+  return { value, telemetry };
 }

@@ -1,6 +1,7 @@
 import type OpenAI from "openai";
 import { getOpenRouterClient } from "./client";
-import { PROVIDER_ROUTING } from "./models";
+import { type ModelSlug, PROVIDER_ROUTING } from "./models";
+import { computeCostUsd, type VlmUsage } from "./pricing";
 
 // Hard upper bound so a hung request can't pin a worker indefinitely. We'd
 // rather wait than cut off mid-extraction, so this is well above the
@@ -121,6 +122,83 @@ export function parseToolCallArguments(
     throw new Error(`Expected tool call ${expectedName} not present in response`);
   }
   return JSON.parse(call.function.arguments);
+}
+
+export type VlmCallTelemetry = {
+  model: ModelSlug;
+  latencyMs: number;
+  usage: VlmUsage;
+  costUsd: number;
+};
+
+export type VlmCallResult<T> = {
+  value: T;
+  telemetry: VlmCallTelemetry;
+};
+
+export function readUsage(completion: OpenAI.Chat.Completions.ChatCompletion | null): VlmUsage {
+  // Defensive parsing: OpenRouter forwards Anthropic's usage shape, but the
+  // exact field names for cached tokens have shifted across versions. Treat
+  // anything missing as 0 rather than crashing the verifier.
+  const usage = (completion?.usage ?? null) as
+    | (OpenAI.CompletionUsage & {
+        prompt_tokens_details?: { cached_tokens?: number | null } | null;
+        cached_tokens?: number | null;
+      })
+    | null;
+  if (!usage) {
+    return { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 };
+  }
+  const cached =
+    usage.prompt_tokens_details?.cached_tokens ??
+    (typeof usage.cached_tokens === "number" ? usage.cached_tokens : 0) ??
+    0;
+  return {
+    inputTokens: typeof usage.prompt_tokens === "number" ? usage.prompt_tokens : 0,
+    outputTokens: typeof usage.completion_tokens === "number" ? usage.completion_tokens : 0,
+    cachedInputTokens: typeof cached === "number" ? cached : 0,
+  };
+}
+
+// Wrapper around `callChat` that captures latency, token usage, and cost. Use
+// this in VLM wrappers (extract/warning/escalate/tiebreak) so the verifier can
+// aggregate per-call telemetry. `callChat` retry/timeout/auth-error semantics
+// are preserved — we only measure around the outer call.
+export async function callChatWithTelemetry(
+  body: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming,
+  model: ModelSlug,
+  options: VlmCallOptions = {},
+): Promise<{ completion: OpenAI.Chat.Completions.ChatCompletion; telemetry: VlmCallTelemetry }> {
+  const start = Date.now();
+  let completion: OpenAI.Chat.Completions.ChatCompletion | null = null;
+  try {
+    completion = await callChat(body, options);
+    return {
+      completion,
+      telemetry: telemetryFor(model, start, completion),
+    };
+  } catch (err) {
+    // Re-throw, but attach a partial telemetry so the verifier can still
+    // record latency for the failed attempt. We use AggregateError-style
+    // metadata on the error object rather than a custom subclass to avoid
+    // changing call.ts's existing error shapes.
+    (err as Error & { telemetry?: VlmCallTelemetry }).telemetry = telemetryFor(model, start, null);
+    throw err;
+  }
+}
+
+function telemetryFor(
+  model: ModelSlug,
+  startMs: number,
+  completion: OpenAI.Chat.Completions.ChatCompletion | null,
+): VlmCallTelemetry {
+  const usage = readUsage(completion);
+  return {
+    model,
+    latencyMs: Date.now() - startMs,
+    usage,
+    costUsd: completion ? computeCostUsd(model, usage) : 0,
+  };
 }
 
 export function buildImageUserMessage(

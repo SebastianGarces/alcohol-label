@@ -2,11 +2,12 @@ import { z } from "zod";
 import { LabelExtract } from "@/lib/schema/extract";
 import {
   buildImageUserMessage,
-  callChat,
+  callChatWithTelemetry,
   parseToolCallArguments,
   type VlmCallOptions,
+  type VlmCallResult,
 } from "./call";
-import { MODELS } from "./models";
+import { MODELS, type ModelSlug } from "./models";
 
 const TOOL_NAME = "extract_label";
 
@@ -23,10 +24,14 @@ const EXTRACT_PROMPT =
   "Extract every visible mandatory TTB field from this label image. " +
   "Use the extract_label tool. Read text exactly as printed (preserve case and punctuation).";
 
-export async function extractLabel(dataUrl: string, options: VlmCallOptions = {}) {
-  const completion = await callChat(
+export async function extractLabel(
+  dataUrl: string,
+  options: VlmCallOptions = {},
+  model: ModelSlug = MODELS.HAIKU,
+): Promise<VlmCallResult<LabelExtract>> {
+  const { completion, telemetry } = await callChatWithTelemetry(
     {
-      model: MODELS.HAIKU,
+      model,
       max_tokens: 1024,
       temperature: 0,
       messages: [
@@ -45,9 +50,10 @@ export async function extractLabel(dataUrl: string, options: VlmCallOptions = {}
       ],
       tool_choice: { type: "function", function: { name: TOOL_NAME } },
     },
+    model,
     options,
   );
 
   const args = parseToolCallArguments(completion, TOOL_NAME);
-  return LabelExtract.parse(args);
+  return { value: LabelExtract.parse(args), telemetry };
 }
