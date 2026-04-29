@@ -1,14 +1,14 @@
 # Eval Results
 
-> Generated: 2026-04-29T02:22:52.203Z · Commit: 9306068 · Run cost: $1.34
+> Generated: 2026-04-29T02:42:39.977Z · Commit: 78e7707 · Run cost: $1.34
 
 ## Summary
 
 | Mode | Verdict accuracy | p50 latency | p95 latency | Total cost | Cost/label |
 |---|---|---|---|---|---|
-| **Tiered** (Haiku + Sonnet, default) | 28/29 (96.6%) | 4.0s | 5.8s | $0.4170 | $0.0144 |
-| Haiku only | 28/29 (96.6%) | 3.2s | 6.8s | $0.2314 | $0.0080 |
-| Sonnet only | 26/29 (89.7%) | 5.5s | 6.5s | $0.6939 | $0.0239 |
+| **Tiered** (Haiku + Sonnet, default) | 28/29 (96.6%) | 4.2s | 5.4s | $0.4170 | $0.0144 |
+| Haiku only | 28/29 (96.6%) | 3.2s | 4.3s | $0.2315 | $0.0080 |
+| Sonnet only | 26/29 (89.7%) | 5.7s | 7.1s | $0.6939 | $0.0239 |
 
 **Headline:** Tiered routing is **107.7%** as accurate as all-Sonnet at **60%** of the cost.
 
