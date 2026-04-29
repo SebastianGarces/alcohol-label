@@ -21,9 +21,9 @@ const COPY: Record<OverallStatus, { title: string; subtitle: string }> = {
 };
 
 const STYLES: Record<OverallStatus, string> = {
-  pass: "bg-green-50 text-green-800 border-green-300",
-  review: "bg-amber-50 text-amber-900 border-amber-300",
-  fail: "bg-red-50 text-red-900 border-red-300",
+  pass: "bg-pass-tint text-pass-ink border-pass-rule",
+  review: "bg-review-tint text-review-ink border-review-rule",
+  fail: "bg-fail-tint text-fail-ink border-fail-rule",
 };
 
 const ICONS: Record<OverallStatus, typeof CheckCircle2> = {
@@ -46,16 +46,16 @@ export function StatusBanner({
     <div
       role="status"
       aria-live="polite"
-      className={cn("flex items-start gap-4 rounded-2xl border-2 p-6 shadow-sm", STYLES[status])}
+      className={cn("flex items-start gap-4 rounded-xl border-2 p-6 shadow-card", STYLES[status])}
     >
       <Icon aria-hidden className="mt-1 size-10 shrink-0" />
       <div className="flex flex-col gap-1">
-        <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
-        <p className="text-base leading-relaxed">{subtitle}</p>
-        <p className="flex items-center gap-2 text-sm opacity-70">
+        <h2 className="type-display tracking-tight">{title}</h2>
+        <p className="type-body">{subtitle}</p>
+        <p className="flex items-center gap-2 type-label !tracking-normal !normal-case opacity-80 mt-1">
           Verified in {(durationMs / 1000).toFixed(1)} s
           {slow ? (
-            <span className="inline-flex items-center gap-1 rounded-md bg-white/60 px-2 py-0.5 text-xs font-medium">
+            <span className="inline-flex items-center gap-1 rounded-sm bg-paper/70 px-2 py-0.5 text-xs font-medium">
               <Clock aria-hidden className="size-3" />
               Slow ({">"}5 s)
             </span>

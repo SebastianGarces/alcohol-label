@@ -16,13 +16,12 @@ export default async function Home() {
   const samples = await loadSamples();
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-12">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-4xl font-semibold tracking-tight text-foreground">
-          TTB Label Verifier
-        </h1>
-        <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground">
-          Compare alcohol label artwork to your application data. Upload a label and a few fields,
-          and we'll surface mismatches and warning-statement issues before TTB does.
+      <header className="flex flex-col gap-3">
+        <h1 className="type-display text-ink">TTB Label Verifier</h1>
+        <p className="type-body max-w-2xl text-graphite">
+          Compare alcohol label artwork to the COLA application data. Upload a label, fill in the
+          application fields, and the verifier returns a field-by-field breakdown of every mismatch
+          and warning-statement issue.
         </p>
       </header>
       <VerifierClient samples={samples} />

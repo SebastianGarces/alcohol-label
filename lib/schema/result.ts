@@ -11,6 +11,7 @@ export const MatchMethod = z.enum([
   "address_token",
   "llm_tiebreak",
   "wine_14pp_rule",
+  "category_swap",
   "absent",
 ]);
 export type MatchMethod = z.infer<typeof MatchMethod>;

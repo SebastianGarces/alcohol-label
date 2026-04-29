@@ -12,15 +12,15 @@ export function WarningRedline({
 }) {
   const passed = warning.status === "pass";
   return (
-    <section className="flex flex-col gap-3 rounded-lg border p-5">
+    <section className="@container/redline flex flex-col gap-3 rounded-md border border-ledger bg-paper p-5">
       <header className="flex items-center justify-between gap-2">
-        <h3 className="text-lg font-semibold">Government health warning</h3>
+        <h3 className="type-title text-ink">Government health warning</h3>
         <span
           className={cn(
             "rounded-full border px-3 py-1 text-sm font-medium",
             passed
-              ? "border-green-300 bg-green-50 text-green-800"
-              : "border-red-300 bg-red-50 text-red-900",
+              ? "border-pass-rule bg-pass-tint text-pass-ink"
+              : "border-fail-rule bg-fail-tint text-fail-ink",
           )}
         >
           {passed ? "Compliant" : "Non-compliant"}
@@ -28,14 +28,14 @@ export function WarningRedline({
       </header>
 
       {!passed && warning.failures.length ? (
-        <ul className="list-inside list-disc space-y-1 text-sm text-red-900">
+        <ul className="list-inside list-disc space-y-1 text-base text-fail-ink">
           {warning.failures.map((f) => (
             <li key={`${f.kind}:${f.detail}`}>{f.detail}</li>
           ))}
         </ul>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 @2xl/redline:grid-cols-2">
         <Block title="Canonical (27 CFR 16.21)" body={warning.canonicalText} />
         <Block
           title="Read from label"
@@ -74,8 +74,8 @@ function Block({
 }) {
   return (
     <article className="flex flex-col gap-2">
-      <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</h4>
-      <p className="whitespace-normal break-words rounded-md border bg-slate-50 p-3 font-mono text-sm leading-relaxed">
+      <h4 className="type-label text-pencil">{title}</h4>
+      <p className="type-mono whitespace-normal break-words rounded-sm border border-ledger bg-bone p-3 text-ink">
         {diffAgainst ? <Diff before={diffAgainst} after={body} /> : body}
       </p>
     </article>
@@ -92,14 +92,20 @@ function Diff({ before, after }: { before: string; after: string }) {
         cursor += part.value.length;
         if (part.added) {
           return (
-            <ins key={key} className="bg-red-200 text-red-900 no-underline">
+            <ins
+              key={key}
+              className="bg-fail-tint text-fail-ink underline decoration-rust decoration-1 underline-offset-2"
+            >
               {part.value}
             </ins>
           );
         }
         if (part.removed) {
           return (
-            <del key={key} className="bg-amber-200 text-amber-900">
+            <del
+              key={key}
+              className="bg-review-tint text-review-ink decoration-review-ink decoration-1"
+            >
               {part.value}
             </del>
           );
@@ -112,13 +118,13 @@ function Diff({ before, after }: { before: string; after: string }) {
 
 function FlagRow({ label, ok }: { label: string; ok: boolean }) {
   return (
-    <p className="flex items-center gap-2 text-sm">
+    <p className="flex items-center gap-2 text-base">
       <span
         aria-hidden
-        className={cn("inline-block size-2.5 rounded-full", ok ? "bg-green-600" : "bg-red-600")}
+        className={cn("inline-block size-2.5 rounded-full", ok ? "bg-pass-ink" : "bg-fail-ink")}
       />
-      <span>{label}</span>
-      <span className={cn("font-medium", ok ? "text-green-700" : "text-red-700")}>
+      <span className="text-ink">{label}</span>
+      <span className={cn("font-medium", ok ? "text-pass-ink" : "text-fail-ink")}>
         {ok ? "OK" : "Failed"}
       </span>
     </p>

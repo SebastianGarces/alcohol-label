@@ -47,26 +47,27 @@ export function BatchDropzone({
       <div
         {...getRootProps({
           className: cn(
-            "flex min-h-56 flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-10 text-center transition focus-within:ring-2 focus-within:ring-primary",
+            "flex min-h-56 flex-col items-center justify-center gap-3 rounded-xl border p-10 text-center transition focus-within:ring-2 focus-within:ring-rust",
             isDragActive
-              ? "border-primary bg-primary/5"
-              : "cursor-pointer border-slate-300 bg-slate-50 hover:bg-slate-100",
+              ? "border-rust bg-rust-tint"
+              : "cursor-pointer border-ledger bg-bone hover:bg-bone/80",
           ),
         })}
       >
         <input {...getInputProps()} aria-label="Upload images and CSV" />
-        <div className="flex items-center gap-4 text-slate-500">
+        <div className="flex items-center gap-4 text-pencil">
           <Images aria-hidden className="size-10" />
           <FileSpreadsheet aria-hidden className="size-10" />
         </div>
-        <p className="text-base font-medium">
+        <p className="text-base font-medium text-ink">
           Drop label images and one CSV here, or click to browse
         </p>
-        <p className="text-sm text-muted-foreground">
-          We'll match images to rows by <code>filename</code>, case-insensitive.
+        <p className="text-base text-graphite">
+          The verifier matches images to rows by{" "}
+          <code className="type-mono text-ink">filename</code>, case-insensitive.
         </p>
       </div>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-base text-graphite">
         {images.length} image{images.length === 1 ? "" : "s"} ·{" "}
         {csv ? `CSV: ${csv.name}` : "no CSV yet"}
       </p>

@@ -4,22 +4,14 @@ import { Loader2, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ImagePreview } from "@/components/ui/ImagePreview";
 import { parseBatchCsv } from "@/lib/batch/csv";
 import { rowsToCsv } from "@/lib/batch/export";
 import { matchFilesToRows } from "@/lib/batch/match-files";
 import { estimateEtaMs, type QueueController, runQueue } from "@/lib/batch/queue";
 import { computeBatchCounts, failedRowIndices } from "@/lib/batch/stats";
-import { type BatchRow, BatchRow as BatchRowSchema, type SkippedCsvRow } from "@/lib/schema/batch";
+import type { BatchRow, SkippedCsvRow } from "@/lib/schema/batch";
 import type { VerificationResult } from "@/lib/schema/result";
-import {
-  deleteBatch,
-  listBatches,
-  loadRows,
-  type StoredBatch,
-  saveBatch,
-  saveRow,
-  setMemoryFallbackHandler,
-} from "@/lib/storage/batches";
 import { resizeImageForUpload } from "@/lib/upload/resize";
 import { BatchDropzone, type DropPayload } from "./BatchDropzone";
 import { PreflightSummary } from "./PreflightSummary";
@@ -42,52 +34,33 @@ export function BatchClient() {
   const [skipped, setSkipped] = useState<SkippedCsvRow[]>([]);
   const [unmatchedRows, setUnmatchedRows] = useState<string[]>([]);
   const [unmatchedImages, setUnmatchedImages] = useState<string[]>([]);
-  const [batchId, setBatchId] = useState<string | null>(null);
   const [rows, setRows] = useState<BatchRow[]>([]);
   const [batchStartedAt, setBatchStartedAt] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
-  const [resumable, setResumable] = useState<{ batch: StoredBatch; rows: BatchRow[] } | null>(null);
   const [queueActive, setQueueActive] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   const filesByKey = useRef<FileMap>(new Map());
   const queueRef = useRef<QueueController | null>(null);
   const rowsRef = useRef<BatchRow[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     rowsRef.current = rows;
   }, [rows]);
 
   useEffect(() => {
-    setMemoryFallbackHandler((reason) => {
-      toast.warning(`History won't persist this session: ${reason}`);
-    });
-    let cancelled = false;
-    (async () => {
-      const batches = await listBatches();
-      if (cancelled) return;
-      const latest = batches.sort((a, b) => b.createdAt - a.createdAt)[0];
-      if (!latest) return;
-      const stored = await loadRows(latest.id);
-      if (cancelled) return;
-      const safe = stored.flatMap((r) => {
-        const parsed = BatchRowSchema.safeParse(r);
-        return parsed.success ? [parsed.data] : [];
-      });
-      if (safe.some((r) => r.state === "pending" || r.state === "running" || r.state === "error")) {
-        setResumable({ batch: latest, rows: safe });
-      }
-    })();
+    const next = new Map<string, string>();
+    for (const f of images) {
+      next.set(f.name.toLowerCase(), URL.createObjectURL(f));
+    }
+    setPreviewUrls(next);
     return () => {
-      cancelled = true;
+      for (const url of next.values()) URL.revokeObjectURL(url);
     };
-  }, []);
+  }, [images]);
 
-  function startQueue(
-    activeBatchId: string,
-    preparedRows: BatchRow[],
-    indices: number[],
-    filesMap: FileMap,
-  ) {
+  function startQueue(preparedRows: BatchRow[], indices: number[], filesMap: FileMap) {
     setQueueActive(true);
     setPaused(false);
     setBatchStartedAt(Date.now());
@@ -123,16 +96,16 @@ export function BatchClient() {
             });
             if (!retryRes.ok) throw await asError(retryRes);
             const result = (await retryRes.json()) as VerificationResult;
-            await markDone(activeBatchId, row.id, result);
+            markDone(row.id, result);
             return;
           }
           if (!res.ok) throw await asError(res);
           const result = (await res.json()) as VerificationResult;
-          await markDone(activeBatchId, row.id, result);
+          markDone(row.id, result);
         } catch (err) {
           if (signal.aborted) return;
           const message = err instanceof Error ? err.message : "Unknown error";
-          await markError(activeBatchId, row.id, message);
+          markError(row.id, message);
         }
       },
       { concurrency: 6 },
@@ -149,43 +122,35 @@ export function BatchClient() {
     setRows((prev) => prev.map((r) => (r.id === rowId ? patch(r) : r)));
   }
 
-  async function markDone(
-    activeBatchId: string,
-    rowId: string,
-    result: VerificationResult,
-  ): Promise<void> {
-    let updated: BatchRow | undefined;
+  function markDone(rowId: string, result: VerificationResult): void {
     setRows((prev) =>
-      prev.map((r) => {
-        if (r.id !== rowId) return r;
-        updated = {
-          ...r,
-          state: "done",
-          result,
-          finishedAt: Date.now(),
-          errorMessage: null,
-        };
-        return updated;
-      }),
+      prev.map((r) =>
+        r.id === rowId
+          ? {
+              ...r,
+              state: "done",
+              result,
+              finishedAt: Date.now(),
+              errorMessage: null,
+            }
+          : r,
+      ),
     );
-    if (updated) await saveRow(activeBatchId, updated);
   }
 
-  async function markError(activeBatchId: string, rowId: string, message: string): Promise<void> {
-    let updated: BatchRow | undefined;
+  function markError(rowId: string, message: string): void {
     setRows((prev) =>
-      prev.map((r) => {
-        if (r.id !== rowId) return r;
-        updated = {
-          ...r,
-          state: "error",
-          errorMessage: message,
-          finishedAt: Date.now(),
-        };
-        return updated;
-      }),
+      prev.map((r) =>
+        r.id === rowId
+          ? {
+              ...r,
+              state: "error",
+              errorMessage: message,
+              finishedAt: Date.now(),
+            }
+          : r,
+      ),
     );
-    if (updated) await saveRow(activeBatchId, updated);
   }
 
   async function asError(res: Response): Promise<Error> {
@@ -202,7 +167,6 @@ export function BatchClient() {
     setCsv(payload.csv);
   }
 
-  const [demoLoading, setDemoLoading] = useState(false);
   async function loadDemoBatch(): Promise<void> {
     setDemoLoading(true);
     try {
@@ -283,23 +247,10 @@ export function BatchClient() {
     setPhase("preflight");
   }
 
-  async function startBatch(): Promise<void> {
+  function startBatch(): void {
     if (rows.length === 0) return;
-    const id = newId();
-    setBatchId(id);
     setPhase("running");
-
-    const meta: StoredBatch = {
-      id,
-      createdAt: Date.now(),
-      total: rows.length,
-    };
-    await saveBatch(meta);
-    for (const row of rows) {
-      await saveRow(id, row);
-    }
     startQueue(
-      id,
       rows,
       rows.map((_, i) => i),
       filesByKey.current,
@@ -322,7 +273,6 @@ export function BatchClient() {
   }
 
   function handleRetryFailed(): void {
-    if (!batchId) return;
     const failedIndices = failedRowIndices(rowsRef.current);
     if (failedIndices.length === 0) {
       toast.message("No failed rows to retry.");
@@ -336,7 +286,7 @@ export function BatchClient() {
       ),
     );
     setPhase("running");
-    startQueue(batchId, rowsRef.current, failedIndices, filesByKey.current);
+    startQueue(rowsRef.current, failedIndices, filesByKey.current);
   }
 
   async function handleExport(): Promise<void> {
@@ -350,23 +300,6 @@ export function BatchClient() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  async function handleResumeStored(): Promise<void> {
-    if (!resumable) return;
-    toast.message(
-      "We can show your previous batch's results, but the original images aren't kept in the browser. Re-upload the same images to retry pending rows.",
-    );
-    setBatchId(resumable.batch.id);
-    setRows(resumable.rows);
-    setPhase("complete");
-    setResumable(null);
-  }
-
-  async function handleDiscardStored(): Promise<void> {
-    if (!resumable) return;
-    await deleteBatch(resumable.batch.id);
-    setResumable(null);
-  }
-
   function handleStartOver(): void {
     setPhase("idle");
     setRows([]);
@@ -375,7 +308,6 @@ export function BatchClient() {
     setSkipped([]);
     setUnmatchedRows([]);
     setUnmatchedImages([]);
-    setBatchId(null);
     setQueueActive(false);
     setPaused(false);
   }
@@ -389,28 +321,6 @@ export function BatchClient() {
 
   return (
     <div className="flex flex-col gap-6">
-      {resumable ? (
-        <section
-          role="status"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 text-amber-900"
-        >
-          <div>
-            <p className="text-base font-medium">
-              We have a saved batch with {resumable.batch.total} rows.
-            </p>
-            <p className="text-sm">
-              Open it to view results, or start fresh. Original images aren't kept in the browser.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleResumeStored}>Open previous batch</Button>
-            <Button variant="outline" onClick={handleDiscardStored}>
-              Discard
-            </Button>
-          </div>
-        </section>
-      ) : null}
-
       {phase === "idle" ? (
         <section className="flex flex-col gap-4">
           <BatchDropzone images={images} csv={csv} onDrop={handleDrop} />
@@ -432,18 +342,38 @@ export function BatchClient() {
               {demoLoading ? "Loading demo…" : "Load demo batch (24 labels)"}
             </Button>
           </div>
+          {images.length > 0 ? (
+            <ImageStrip
+              title={`${images.length} image${images.length === 1 ? "" : "s"} staged`}
+              caption="Click any thumbnail to enlarge before previewing matches."
+              files={images}
+              previewUrls={previewUrls}
+            />
+          ) : null}
         </section>
       ) : null}
 
       {phase === "preflight" ? (
-        <PreflightSummary
-          matchedCount={rows.length}
-          skipped={skipped}
-          unmatchedRows={unmatchedRows}
-          unmatchedImages={unmatchedImages}
-          onConfirm={startBatch}
-          onCancel={handleStartOver}
-        />
+        <>
+          <PreflightSummary
+            matchedCount={rows.length}
+            skipped={skipped}
+            unmatchedRows={unmatchedRows}
+            unmatchedImages={unmatchedImages}
+            onConfirm={startBatch}
+            onCancel={handleStartOver}
+          />
+          {rows.length > 0 ? (
+            <ImageStrip
+              title={`${rows.length} matched image${rows.length === 1 ? "" : "s"}`}
+              caption="These will run when you start verifying."
+              files={rows
+                .map((r) => images.find((f) => f.name.toLowerCase() === r.filename.toLowerCase()))
+                .filter((f): f is File => Boolean(f))}
+              previewUrls={previewUrls}
+            />
+          ) : null}
+        </>
       ) : null}
 
       {phase === "running" || phase === "complete" ? (
@@ -455,16 +385,17 @@ export function BatchClient() {
             onCancel={handleCancel}
           />
           {stats.running > 0 ? (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <p className="flex items-center gap-2 text-base text-graphite">
               <Loader2 aria-hidden className="size-4 animate-spin" />
               {stats.running} in flight…
             </p>
           ) : null}
           <ResultsTable
             rows={rows}
+            previewUrls={previewUrls}
             onExport={handleExport}
             onRetryFailed={phase === "complete" ? handleRetryFailed : undefined}
-            retryDisabled={!batchId || rows.every((r) => r.state !== "error" && !r.result?.error)}
+            retryDisabled={rows.every((r) => r.state !== "error" && !r.result?.error)}
           />
           {phase === "complete" ? (
             <div>
@@ -476,5 +407,42 @@ export function BatchClient() {
         </>
       ) : null}
     </div>
+  );
+}
+
+function ImageStrip({
+  title,
+  caption,
+  files,
+  previewUrls,
+}: {
+  title: string;
+  caption?: string;
+  files: File[];
+  previewUrls: Map<string, string>;
+}) {
+  if (files.length === 0) return null;
+  return (
+    <section className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="type-label text-pencil">{title}</p>
+        {caption ? <p className="text-sm text-graphite">{caption}</p> : null}
+      </div>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+        {files.map((file) => {
+          const url = previewUrls.get(file.name.toLowerCase());
+          if (!url) return null;
+          return (
+            <ImagePreview
+              key={file.name}
+              src={url}
+              alt={file.name}
+              caption={file.name}
+              className="aspect-square w-full"
+            />
+          );
+        })}
+      </div>
+    </section>
   );
 }

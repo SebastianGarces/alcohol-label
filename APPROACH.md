@@ -111,7 +111,24 @@ The warning is the load-bearing failure case. It is *not* judged by the LLM:
 
 This was a deliberate design choice. The TTB rejects applications over missing commas in the warning. An LLM that "reads the warning and decides if it's compliant" is one prompt drift away from a real-world compliance miss. Exact-match is the right primitive; UX makes failures obvious via the side-by-side `<ins>`/`<del>` red-line.
 
-### 4.3 Beverage-type-aware required fields
+### 4.3 Bottler ↔ importer category-swap detection
+
+**Problem.** TTB treats bottler (27 CFR 5.66) and importer (27 CFR 5.67/5.68) as distinct mandatory fields, and the schema reflects that — `bottlerName/Address` and `importerName/Address` are separate slots. But for an imported product whose US importer is also the responsible packager, applicants frequently file the same entity under the bottler column even though the label only carries an "Imported by …" statement. A naive slot-to-slot match flags both bottler fields as MISSING (red), which is misleading: the value isn't missing from the label — it's classified differently.
+
+**Resolution.** After `runFieldChecks` resolves each slot independently, the orchestrator runs a synchronous `applyCategorySwapDetection` pass. For any field whose status is `missing` *and* the application carries a value, the detector looks up the partner slot (`bottlerName ↔ importerName`, `bottlerAddress ↔ importerAddress`) on the label extract. If the application's value matches the partner's label value (Jaro-Winkler ≥ 0.85 for names, token-set ratio ≥ 0.9 for addresses, mirroring the in-slot thresholds), the FieldResult is rewritten:
+
+- `status: missing → fuzzy_match`
+- `method: absent → category_swap`
+- `labelValue` filled in from the partner slot
+- `rationale`: "The application lists this value under bottler, but the label shows the same entity as the importer (27 CFR 5.66 vs 5.67). Confirm the correct role."
+
+That single rationale change downgrades the row from FAIL (red) to REVIEW (yellow) and threads through `explainRejection` so the human-readable explanation describes the *role mismatch*, not a phantom missing value. The detection is symmetric — a missing importer matched on the bottler side gets the same treatment with the citation reversed.
+
+**Why this is the right primitive.** Same-entity-multiple-roles is structurally common for imported beverages, and an experienced agent (Dave from the brief) already does this reasoning by eye in seconds. Demoting MISSING → REVIEW preserves the agent's authority — they still *see* and *confirm* the row — while killing the false-red that erodes trust in batch triage.
+
+**Tradeoff.** A real applicant who legitimately needs both a US bottler *and* a foreign importer named separately, and who only filled one, would also land in REVIEW rather than FAIL. Mitigation: REVIEW always surfaces to the agent for explicit confirmation; we never silently pass the swap.
+
+### 4.4 Beverage-type-aware required fields
 
 Required-field sets are parameterized by `beverageType`:
 
@@ -171,6 +188,7 @@ This is the table from `presearch.md → Loop 5`, with what was actually shipped
 | I7 | One-click "Explain this rejection" (Sonnet) | `components/result/ExplainRejection.tsx`, `lib/vlm/explain.ts` | Dave: "judgment, not just matching" |
 | I8 | Demo-mode sample labels (5 pre-loaded, SVG-rendered deterministically) | `public/samples/`, `scripts/generate-samples.ts`, `app/page.tsx` | Friction-free evaluation |
 | I11 | Tiered model routing — Haiku → Sonnet escalation; visible badge + tooltip + summary note | `lib/verifier/index.ts`, `lib/vlm/escalate.ts`, `components/result/FieldRow.tsx`, `components/result/TieredRoutingNote.tsx` | Cost+latency optimization that's also visible |
+| I13 | Bottler ↔ importer category-swap detection — demotes MISSING → REVIEW with a "wrong slot" rationale when the application's bottler value appears on the label as the importer (or vice versa) | `lib/match/field.ts → detectCategorySwap`, `lib/verifier/index.ts → applyCategorySwapDetection` | Dave: "judgment, not just matching"; matches how an experienced agent reads imported labels |
 
 ### STRETCH (Phase 6)
 

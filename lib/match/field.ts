@@ -371,6 +371,86 @@ export function tiebreakResolved(
   );
 }
 
+// Cross-field "role swap" detection.
+//
+// Bottler (27 CFR 5.66) and Importer (27 CFR 5.67/5.68) are distinct mandatory
+// fields, but the same legal entity often holds both roles — and applicants
+// frequently file the value under the wrong column. When a bottler field has
+// no label match but the same value appears on the label as the importer
+// (or vice versa), we'd rather flag REVIEW with a clear "wrong slot" rationale
+// than report MISSING (red), which is misleading.
+const SWAP_PARTNER: Partial<Record<FieldKey, FieldKey>> = {
+  bottlerName: "importerName",
+  bottlerAddress: "importerAddress",
+  importerName: "bottlerName",
+  importerAddress: "bottlerAddress",
+};
+
+function rolePhrase(field: FieldKey): { self: string; other: string; cite: string } {
+  if (field === "bottlerName" || field === "bottlerAddress") {
+    return { self: "bottler", other: "importer", cite: "27 CFR 5.66 vs 5.67" };
+  }
+  return { self: "importer", other: "bottler", cite: "27 CFR 5.67 vs 5.66" };
+}
+
+export function categorySwapPartner(field: FieldKey): FieldKey | undefined {
+  return SWAP_PARTNER[field];
+}
+
+export function detectCategorySwap(
+  field: FieldKey,
+  applicationValue: string,
+  partnerExtracted: ExtractedField,
+): FieldResult | null {
+  const partnerValue = partnerExtracted.value;
+  if (!partnerValue) return null;
+
+  const isAddress = field === "bottlerAddress" || field === "importerAddress";
+  let similarity: number;
+  let matched: boolean;
+
+  if (isAddress) {
+    const a = normalizeAddress(applicationValue);
+    const b = normalizeAddress(partnerValue);
+    if (a === b) {
+      similarity = 1;
+      matched = true;
+    } else {
+      similarity = tokenSetRatio(a, b);
+      matched = similarity >= ADDRESS_TOKEN_THRESHOLD;
+    }
+  } else {
+    const a = normalizeBasic(applicationValue);
+    const b = normalizeBasic(partnerValue);
+    if (a === b) {
+      similarity = 1;
+      matched = true;
+    } else {
+      similarity = jaroWinkler(a, b);
+      matched = similarity >= JW_TIEBREAK_THRESHOLD;
+    }
+  }
+
+  if (!matched) return null;
+
+  const roles = rolePhrase(field);
+  const rationale =
+    `The application lists this value under ${roles.self}, ` +
+    `but the label shows the same entity as the ${roles.other} (${roles.cite}). ` +
+    `Confirm the correct role.`;
+
+  return build(
+    field,
+    "fuzzy_match",
+    "category_swap",
+    applicationValue,
+    partnerValue,
+    partnerExtracted.confidence,
+    similarity,
+    rationale,
+  );
+}
+
 // Wine 14% threshold — tolerance never crosses 14% (27 CFR 4.36).
 export function wine14Crossed(
   beverageType: BeverageType,

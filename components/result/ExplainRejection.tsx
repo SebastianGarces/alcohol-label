@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Loader2, Sparkles } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { useId, useState } from "react";
 import { explainRejectionAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
@@ -37,10 +37,35 @@ type State =
   | { kind: "ready"; text: string }
   | { kind: "error"; message: string };
 
+type Variant = "fail" | "review";
+
+function variantFor(payload: FieldPayload | WarningPayload): Variant {
+  if (payload.kind === "warning") return "fail";
+  if (payload.status === "fuzzy_match") return "review";
+  return "fail";
+}
+
+const VARIANT_BUTTON: Record<Variant, string> = {
+  fail: "border-fail-rule bg-fail-tint/40 text-fail-ink hover:bg-fail-tint/70 aria-expanded:bg-fail-tint/70 aria-expanded:text-fail-ink",
+  review:
+    "border-review-rule bg-review-tint/40 text-review-ink hover:bg-review-tint/70 aria-expanded:bg-review-tint/70 aria-expanded:text-review-ink",
+};
+
+const VARIANT_PANEL: Record<Variant, string> = {
+  fail: "border-fail-rule bg-fail-tint/55 text-ink",
+  review: "border-review-rule bg-review-tint/55 text-ink",
+};
+
+const VARIANT_LOADING: Record<Variant, string> = {
+  fail: "text-fail-ink",
+  review: "text-review-ink",
+};
+
 export function ExplainRejection({ resultId, scope, payload }: ExplainRejectionProps) {
   const [state, setState] = useState<State>({ kind: "idle" });
   const [open, setOpen] = useState(false);
   const panelId = useId();
+  const variant = variantFor(payload);
 
   async function loadExplanation() {
     const key = explanationKey(resultId, scope);
@@ -70,13 +95,11 @@ export function ExplainRejection({ resultId, scope, payload }: ExplainRejectionP
       <Button
         type="button"
         variant="outline"
-        size="sm"
         onClick={toggle}
         aria-expanded={open}
         aria-controls={panelId}
-        className="w-fit gap-2"
+        className={cn("w-fit gap-2", VARIANT_BUTTON[variant])}
       >
-        <Sparkles className="size-4" aria-hidden />
         {open ? "Hide explanation" : "Explain this"}
         <ChevronDown
           aria-hidden
@@ -88,20 +111,19 @@ export function ExplainRejection({ resultId, scope, payload }: ExplainRejectionP
           id={panelId}
           aria-label="Plain-English explanation"
           aria-live="polite"
-          className="rounded-md border bg-slate-50 p-3 text-sm leading-relaxed"
+          className={cn("rounded-md border p-4 text-base leading-relaxed", VARIANT_PANEL[variant])}
         >
           {state.kind === "loading" ? (
-            <p className="flex items-center gap-2 text-muted-foreground">
+            <p className={cn("flex items-center gap-2", VARIANT_LOADING[variant])}>
               <Loader2 aria-hidden className="size-4 animate-spin" />
               Drafting an explanation…
             </p>
           ) : state.kind === "error" ? (
-            <div className="flex flex-col gap-2">
-              <p className="text-red-800">{state.message}</p>
+            <div className="flex flex-col gap-3">
+              <p className="text-fail-ink">{state.message}</p>
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
                 className="w-fit"
                 onClick={() => void loadExplanation()}
               >
@@ -109,9 +131,9 @@ export function ExplainRejection({ resultId, scope, payload }: ExplainRejectionP
               </Button>
             </div>
           ) : state.kind === "ready" ? (
-            <p className="text-foreground">{state.text}</p>
+            <p className="text-ink">{state.text}</p>
           ) : (
-            <p className="text-muted-foreground">Preparing explanation…</p>
+            <p className={VARIANT_LOADING[variant]}>Preparing explanation…</p>
           )}
         </section>
       ) : null}

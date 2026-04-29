@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ImagePreview } from "@/components/ui/ImagePreview";
 import {
   Table,
   TableBody,
@@ -45,15 +46,15 @@ const STATUS_RANK: Record<string, number> = {
 };
 
 function rowStatus(row: BatchRow): { label: string; tone: string } {
-  if (row.state === "error") return { label: "error", tone: "bg-red-100 text-red-900" };
-  if (row.state === "pending") return { label: "pending", tone: "bg-slate-100 text-slate-700" };
-  if (row.state === "running") return { label: "running", tone: "bg-blue-100 text-blue-900" };
+  if (row.state === "error") return { label: "error", tone: "bg-fail-tint text-fail-ink" };
+  if (row.state === "pending") return { label: "pending", tone: "bg-bone text-graphite" };
+  if (row.state === "running") return { label: "running", tone: "bg-rust-tint text-rust-deep" };
   const r = row.result;
-  if (!r) return { label: row.state, tone: "bg-slate-100 text-slate-700" };
-  if (r.error) return { label: r.error, tone: "bg-red-100 text-red-900" };
-  if (r.status === "pass") return { label: "pass", tone: "bg-green-100 text-green-900" };
-  if (r.status === "review") return { label: "review", tone: "bg-amber-100 text-amber-900" };
-  return { label: "fail", tone: "bg-red-100 text-red-900" };
+  if (!r) return { label: row.state, tone: "bg-bone text-graphite" };
+  if (r.error) return { label: r.error, tone: "bg-fail-tint text-fail-ink" };
+  if (r.status === "pass") return { label: "pass", tone: "bg-pass-tint text-pass-ink" };
+  if (r.status === "review") return { label: "review", tone: "bg-review-tint text-review-ink" };
+  return { label: "fail", tone: "bg-fail-tint text-fail-ink" };
 }
 
 function compareRows(a: BatchRow, b: BatchRow, key: SortKey, dir: 1 | -1): number {
@@ -73,12 +74,19 @@ function compareRows(a: BatchRow, b: BatchRow, key: SortKey, dir: 1 | -1): numbe
 
 export type ResultsTableProps = {
   rows: BatchRow[];
+  previewUrls?: Map<string, string>;
   onExport: () => void;
   onRetryFailed?: () => void;
   retryDisabled?: boolean;
 };
 
-export function ResultsTable({ rows, onExport, onRetryFailed, retryDisabled }: ResultsTableProps) {
+export function ResultsTable({
+  rows,
+  previewUrls,
+  onExport,
+  onRetryFailed,
+  retryDisabled,
+}: ResultsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>("status");
   const [sortDir, setSortDir] = useState<1 | -1>(1);
   const [filter, setFilter] = useState<FilterKey>("all");
@@ -183,10 +191,8 @@ export function ResultsTable({ rows, onExport, onRetryFailed, retryDisabled }: R
               aria-selected={filter === f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                "h-9 rounded-md px-3 text-sm font-medium transition",
-                filter === f.key
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200",
+                "h-10 rounded-md px-3.5 text-base font-medium transition",
+                filter === f.key ? "bg-ink text-paper" : "bg-bone text-ink hover:bg-ledger",
               )}
             >
               {f.label}
@@ -195,9 +201,8 @@ export function ResultsTable({ rows, onExport, onRetryFailed, retryDisabled }: R
         </div>
         <div className="flex items-center gap-2">
           <Button
-            size="sm"
             variant="outline"
-            className="gap-1"
+            className="gap-2"
             onClick={() => setShortcutsOpen(true)}
             aria-label="Show keyboard shortcuts"
           >
@@ -205,22 +210,21 @@ export function ResultsTable({ rows, onExport, onRetryFailed, retryDisabled }: R
           </Button>
           {onRetryFailed ? (
             <Button
-              size="sm"
               variant="outline"
-              className="gap-1"
+              className="gap-2"
               onClick={onRetryFailed}
               disabled={retryDisabled}
             >
               <RotateCcw className="size-4" /> Retry failed
             </Button>
           ) : null}
-          <Button size="sm" variant="outline" className="gap-1" onClick={onExport}>
+          <Button variant="outline" className="gap-2" onClick={onExport}>
             <Download className="size-4" /> Export CSV
           </Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border bg-white">
+      <div className="overflow-x-auto rounded-xl border border-ledger bg-paper shadow-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -237,7 +241,7 @@ export function ResultsTable({ rows, onExport, onRetryFailed, retryDisabled }: R
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="py-8 text-center text-graphite">
                   No rows in this view.
                 </TableCell>
               </TableRow>
@@ -254,6 +258,7 @@ export function ResultsTable({ rows, onExport, onRetryFailed, retryDisabled }: R
                   approval={approvals[row.id] ?? null}
                   statusLabel={status.label}
                   statusTone={status.tone}
+                  previewUrl={previewUrls?.get(row.filename.toLowerCase())}
                   onToggle={() => setExpandedId(expanded ? null : row.id)}
                   onFocusRow={() => setFocusedId(row.id)}
                   onCycleApproval={() =>
@@ -300,13 +305,13 @@ function ShortcutsDialog({
         </DialogHeader>
         <ul className="flex flex-col gap-2">
           {items.map((item) => (
-            <li key={item.label} className="flex items-center justify-between gap-3 text-sm">
-              <span>{item.label}</span>
+            <li key={item.label} className="flex items-center justify-between gap-3 text-base">
+              <span className="text-ink">{item.label}</span>
               <span className="flex gap-1">
                 {item.keys.map((k) => (
                   <kbd
                     key={k}
-                    className="inline-flex h-6 min-w-6 items-center justify-center rounded border border-slate-300 bg-slate-50 px-1.5 font-mono text-xs text-slate-700"
+                    className="inline-flex h-7 min-w-7 items-center justify-center rounded border border-rule bg-bone px-1.5 font-mono text-xs text-ink"
                   >
                     {k}
                   </kbd>
@@ -327,6 +332,7 @@ function RowEntry({
   approval,
   statusLabel,
   statusTone,
+  previewUrl,
   onToggle,
   onFocusRow,
   onCycleApproval,
@@ -337,6 +343,7 @@ function RowEntry({
   approval: Approval;
   statusLabel: string;
   statusTone: string;
+  previewUrl?: string;
   onToggle: () => void;
   onFocusRow: () => void;
   onCycleApproval: () => void;
@@ -350,8 +357,8 @@ function RowEntry({
         data-focused={focused ? "true" : undefined}
         className={cn(
           expandable ? "cursor-pointer" : "",
-          expanded ? "bg-slate-50" : "",
-          focused ? "outline outline-2 -outline-offset-2 outline-indigo-400" : "",
+          expanded ? "bg-bone" : "",
+          focused ? "outline outline-2 -outline-offset-2 outline-rust" : "",
         )}
         onClick={() => {
           onFocusRow();
@@ -363,7 +370,7 @@ function RowEntry({
             <button
               type="button"
               aria-label={expanded ? "Collapse row" : "Expand row"}
-              className="rounded p-1 hover:bg-slate-100"
+              className="rounded p-1 hover:bg-bone"
               onClick={(e) => {
                 e.stopPropagation();
                 onToggle();
@@ -376,28 +383,30 @@ function RowEntry({
         <TableCell>
           <span
             className={cn(
-              "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium uppercase",
+              "inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium uppercase tracking-wider",
               statusTone,
             )}
           >
             {statusLabel}
           </span>
         </TableCell>
-        <TableCell className="font-mono text-sm">{row.filename}</TableCell>
-        <TableCell className="text-sm">{row.application.brandName}</TableCell>
-        <TableCell className="text-sm">{row.application.classType}</TableCell>
-        <TableCell className="text-sm">{row.application.alcoholContent ?? "—"}</TableCell>
+        <TableCell className="type-mono text-ink">{row.filename}</TableCell>
+        <TableCell className="text-base text-ink">{row.application.brandName}</TableCell>
+        <TableCell className="text-base text-ink">{row.application.classType}</TableCell>
+        <TableCell className="text-base text-ink">
+          {row.application.alcoholContent ?? "—"}
+        </TableCell>
         <TableCell>
           <button
             type="button"
             aria-label={`Cycle decision for ${row.filename}`}
             className={cn(
-              "inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium",
+              "inline-flex h-8 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium uppercase tracking-wider",
               approval === "approve"
-                ? "bg-green-100 text-green-900"
+                ? "bg-pass-tint text-pass-ink"
                 : approval === "reject"
-                  ? "bg-red-100 text-red-900"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                  ? "bg-fail-tint text-fail-ink"
+                  : "bg-bone text-graphite hover:bg-ledger",
             )}
             onClick={(e) => {
               e.stopPropagation();
@@ -418,14 +427,28 @@ function RowEntry({
             )}
           </button>
         </TableCell>
-        <TableCell className="text-sm tabular-nums">
+        <TableCell className="text-base tabular-nums text-ink">
           {ms != null ? `${(ms / 1000).toFixed(1)}s` : "—"}
         </TableCell>
       </TableRow>
       {expanded && row.result ? (
         <TableRow>
-          <TableCell colSpan={8} className="whitespace-normal bg-slate-50 p-6">
-            <ResultDisplay result={row.result} />
+          <TableCell colSpan={8} className="whitespace-normal bg-bone p-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-[240px_minmax(0,1fr)]">
+              {previewUrl ? (
+                <aside className="flex flex-col gap-2">
+                  <p className="type-label text-pencil">Label image</p>
+                  <ImagePreview
+                    src={previewUrl}
+                    alt={row.filename}
+                    caption={row.filename}
+                    className="aspect-[3/4] w-full"
+                  />
+                  <p className="text-sm text-graphite">{row.filename}</p>
+                </aside>
+              ) : null}
+              <ResultDisplay result={row.result} />
+            </div>
           </TableCell>
         </TableRow>
       ) : null}
@@ -439,7 +462,7 @@ function SortableHead({ onClick, children }: { onClick: () => void; children: Re
       <button
         type="button"
         onClick={onClick}
-        className="-mx-2 inline-flex items-center gap-1 rounded px-2 py-1 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:bg-slate-100"
+        className="-mx-2 inline-flex items-center gap-1 rounded px-2 py-1 text-left type-label text-pencil hover:bg-bone"
       >
         {children}
       </button>

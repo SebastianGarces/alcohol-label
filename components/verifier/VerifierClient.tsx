@@ -16,6 +16,7 @@ import type { BeverageType } from "@/lib/schema/application";
 import type { VerificationResult } from "@/lib/schema/result";
 import type { Sample } from "@/lib/schema/sample";
 import { resizeImageForUpload } from "@/lib/upload/resize";
+import { cn } from "@/lib/utils";
 
 const FormSchema = z.object({
   beverageType: z.enum(["distilled_spirits", "wine", "malt_beverage"]),
@@ -68,9 +69,9 @@ export function VerifierClient({ samples }: { samples: Sample[] }) {
     if (!pending) return;
     let i = 0;
     const t = setInterval(() => {
-      i = (i + 1) % STATUS_TEXT.length;
+      i = Math.min(i + 1, STATUS_TEXT.length - 1);
       setStatus(STATUS_TEXT[i]!);
-    }, 1200);
+    }, 1500);
     return () => clearInterval(t);
   }, [pending]);
 
@@ -136,21 +137,21 @@ export function VerifierClient({ samples }: { samples: Sample[] }) {
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
       <form
         onSubmit={onSubmit}
-        className="flex flex-col gap-6 rounded-2xl border bg-white p-6 shadow-sm"
+        className="@container/form flex flex-col gap-6 rounded-xl border border-ledger bg-paper p-6 shadow-card"
       >
         <header className="flex flex-col gap-2">
-          <h2 className="text-xl font-semibold">Application data</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="type-title text-ink">Application data</h2>
+          <p className="text-base text-graphite">
             Fill in what you submitted on the COLA form, then attach the label artwork.
           </p>
         </header>
 
         <fieldset className="flex flex-col gap-3">
-          <legend id={beverageId} className="text-sm font-medium">
+          <legend id={beverageId} className="text-base font-medium text-ink">
             Beverage type
           </legend>
           <div
-            className="grid grid-cols-1 gap-2 sm:grid-cols-3"
+            className="grid grid-cols-1 gap-2 @2xl/form:grid-cols-3"
             role="radiogroup"
             aria-labelledby={beverageId}
           >
@@ -159,17 +160,18 @@ export function VerifierClient({ samples }: { samples: Sample[] }) {
               return (
                 <label
                   key={opt.value}
-                  className={`flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm font-medium transition ${
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2 rounded-md border p-3 text-base font-medium transition",
                     checked
-                      ? "border-primary bg-primary/5 text-foreground"
-                      : "border-slate-300 hover:bg-slate-50"
-                  }`}
+                      ? "border-rust bg-rust-tint text-ink"
+                      : "border-ledger text-ink hover:bg-bone",
+                  )}
                 >
                   <input
                     type="radio"
                     value={opt.value}
                     {...form.register("beverageType")}
-                    className="size-4 accent-primary"
+                    className="size-4 accent-rust"
                   />
                   {opt.label}
                 </label>
@@ -199,9 +201,11 @@ export function VerifierClient({ samples }: { samples: Sample[] }) {
           error={form.formState.errors.netContents?.message}
         />
 
-        <details className="rounded-md border bg-slate-50 p-3 text-sm">
-          <summary className="cursor-pointer font-medium">More fields (optional)</summary>
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <details className="@container/morefields rounded-md border border-ledger bg-bone p-4 text-base">
+          <summary className="cursor-pointer font-medium text-ink">
+            More fields (optional, 5)
+          </summary>
+          <div className="mt-3 grid grid-cols-1 gap-3 @md/morefields:grid-cols-2">
             <Field label="Bottler name" {...form.register("bottlerName")} />
             <Field label="Bottler address" {...form.register("bottlerAddress")} />
             <Field label="Importer name" {...form.register("importerName")} />
@@ -211,7 +215,7 @@ export function VerifierClient({ samples }: { samples: Sample[] }) {
         </details>
 
         <div className="flex flex-col gap-3">
-          <Label className="text-sm font-medium">Label image</Label>
+          <Label className="text-base font-medium text-ink">Label image</Label>
           <LabelDropzone file={file} onFile={setFile} />
         </div>
 
@@ -232,18 +236,16 @@ export function VerifierClient({ samples }: { samples: Sample[] }) {
         </div>
 
         {showSamples ? (
-          <ul className="grid grid-cols-1 gap-2 rounded-md border bg-slate-50 p-3 text-sm">
+          <ul className="grid grid-cols-1 gap-1 rounded-md border border-ledger bg-bone p-2 text-base">
             {samples.map((s) => (
               <li key={s.filename}>
                 <button
                   type="button"
                   onClick={() => loadSample(s)}
-                  className="w-full rounded p-2 text-left hover:bg-white"
+                  className="flex w-full items-baseline gap-3 rounded-sm p-2.5 text-left hover:bg-paper"
                 >
-                  <span className="font-medium">{s.label}</span>
-                  <span className="ml-2 text-xs uppercase text-muted-foreground">
-                    expected: {s.expectedStatus}
-                  </span>
+                  <span className="font-medium text-ink">{s.label}</span>
+                  <span className="type-label text-pencil">expected: {s.expectedStatus}</span>
                 </button>
               </li>
             ))}
@@ -261,30 +263,30 @@ export function VerifierClient({ samples }: { samples: Sample[] }) {
             }}
           />
         ) : pending ? (
-          <div className="flex flex-col gap-4 rounded-2xl border-2 border-dashed bg-slate-50 p-8">
+          <div className="flex flex-col gap-4 rounded-xl border border-ledger bg-bone p-8">
             <div className="flex items-center gap-3">
-              <Loader2 aria-hidden className="size-6 animate-spin text-slate-500" />
-              <p className="text-base font-medium">{status}</p>
+              <Loader2 aria-hidden className="size-6 animate-spin text-graphite" />
+              <p className="text-base font-medium text-ink">{status}</p>
             </div>
-            <p className="text-sm text-muted-foreground">Usually under 5 seconds. Hang tight.</p>
+            <p className="text-base text-graphite">Usually under 5 seconds. Hang tight.</p>
             <div className="flex flex-col gap-2">
-              <div className="h-3 w-3/4 animate-pulse rounded bg-slate-200" />
-              <div className="h-3 w-1/2 animate-pulse rounded bg-slate-200" />
-              <div className="h-3 w-2/3 animate-pulse rounded bg-slate-200" />
+              <div className="h-3 w-3/4 animate-pulse rounded bg-ledger" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-ledger" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-ledger" />
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-3 rounded-2xl border-2 border-dashed bg-slate-50 p-8 text-slate-700">
-            <p className="text-lg font-medium">Result will appear here.</p>
-            <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col gap-3 rounded-xl border border-ledger bg-bone p-8 text-graphite">
+            <p className="type-title text-ink">Result will appear here.</p>
+            <p className="text-base">
               You'll see PASS / REVIEW / FAIL with a field-by-field breakdown and the warning
               red-line. Every flagged item gets a one-click plain-English explanation.
             </p>
-            <ul className="flex list-inside list-disc flex-col gap-1 text-sm text-muted-foreground">
+            <ul className="flex list-inside list-disc flex-col gap-1 text-base">
               <li>Have a label handy? Drop the image into the upload area on the left.</li>
               <li>
-                Just exploring? Click <span className="font-medium">Try a sample</span> to load a
-                pre-filled example.
+                Just exploring? Click <span className="font-medium text-ink">Try a sample</span> to
+                load a pre-filled example.
               </li>
             </ul>
           </div>
@@ -305,9 +307,16 @@ const Field = ({ label, required, hint, error, ...props }: FieldProps) => {
   const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id} className="text-sm font-medium">
+      <Label htmlFor={id} className="text-base font-medium text-ink">
         {label}
-        {required ? <span className="ml-1 text-red-700">*</span> : null}
+        {required ? (
+          <>
+            <span aria-hidden="true" className="ml-1 text-fail-ink">
+              *
+            </span>
+            <span className="sr-only">(required)</span>
+          </>
+        ) : null}
       </Label>
       <Input
         id={id}
@@ -316,11 +325,11 @@ const Field = ({ label, required, hint, error, ...props }: FieldProps) => {
         aria-describedby={hint || error ? `${id}-hint` : undefined}
       />
       {error ? (
-        <p id={`${id}-hint`} className="text-xs text-red-700">
+        <p id={`${id}-hint`} className="text-sm text-fail-ink">
           {error}
         </p>
       ) : hint ? (
-        <p id={`${id}-hint`} className="text-xs text-muted-foreground">
+        <p id={`${id}-hint`} className="text-sm text-graphite">
           {hint}
         </p>
       ) : null}

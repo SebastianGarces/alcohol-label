@@ -13,11 +13,11 @@ const NAV = [
 export function SiteHeader() {
   const pathname = usePathname();
   return (
-    <header className="border-b bg-white">
+    <header className="border-b border-ledger bg-paper">
       <div className="mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-3 px-6 py-4 sm:flex-row sm:items-center">
         <Link
           href="/"
-          className="rounded-md text-lg font-semibold tracking-tight text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="rounded-md text-lg font-semibold tracking-tight text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rust focus-visible:ring-offset-2"
         >
           TTB Label Verifier
         </Link>
@@ -31,10 +31,8 @@ export function SiteHeader() {
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "inline-flex h-12 min-w-12 items-center justify-center rounded-md px-4 text-base font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                      active
-                        ? "bg-primary text-primary-foreground"
-                        : "text-foreground hover:bg-slate-100",
+                      "inline-flex h-12 min-w-12 items-center justify-center rounded-md px-4 text-base font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rust focus-visible:ring-offset-2",
+                      active ? "bg-ink text-paper" : "text-ink hover:bg-bone",
                     )}
                   >
                     {item.label}

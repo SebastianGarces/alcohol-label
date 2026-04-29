@@ -268,4 +268,48 @@ describe("verifyLabel orchestrator", () => {
     });
     expect(escalate).toHaveBeenCalledWith(expect.any(String), "brandName");
   });
+
+  it("bottler value found under importer slot → REVIEW with category_swap, not FAIL", async () => {
+    // Real-world case: imported tequila with "Imported by Velvet Crow Spirits LLC,
+    // 88 Mission Street, San Diego, CA" on the label. The applicant filed the
+    // same entity under bottlerName/Address. Verifier should recognize the
+    // role swap and surface REVIEW rather than MISSING (red).
+    const importedApp: Application = {
+      beverageType: "distilled_spirits",
+      brandName: "Velvet Crow",
+      classType: "Tequila Reposado",
+      alcoholContent: "40%",
+      netContents: "750 mL",
+      bottlerName: "Velvet Crow Spirits LLC",
+      bottlerAddress: "88 Mission Street, San Diego, CA",
+    };
+
+    const result = await verifyLabel(Buffer.from([0]), importedApp, {
+      prepareImage: async () => preparedFor(newHash()),
+      extractLabel: async () =>
+        baseExtract({
+          brandName: { value: "Velvet Crow", confidence: 0.95 },
+          classType: { value: "Tequila Reposado", confidence: 0.95 },
+          alcoholContent: { value: "40% alc/vol", confidence: 0.95 },
+          netContents: { value: "750 mL", confidence: 0.95 },
+          bottlerName: { value: null, confidence: 0 },
+          bottlerAddress: { value: null, confidence: 0 },
+          importerName: { value: "Velvet Crow Spirits LLC", confidence: 0.95 },
+          importerAddress: { value: "88 Mission Street, San Diego, CA", confidence: 0.95 },
+        }),
+      extractWarning: async () => goodWarning(),
+      tiebreak: async () => ({ same: true, reason: "ok" }),
+      escalateField: async () => ({ value: "", confidence: 1 }),
+    });
+
+    expect(result.status).toBe("review");
+    const bottlerName = result.fields.find((f) => f.field === "bottlerName");
+    const bottlerAddress = result.fields.find((f) => f.field === "bottlerAddress");
+    expect(bottlerName?.status).toBe("fuzzy_match");
+    expect(bottlerName?.method).toBe("category_swap");
+    expect(bottlerName?.labelValue).toBe("Velvet Crow Spirits LLC");
+    expect(bottlerName?.rationale).toMatch(/importer/i);
+    expect(bottlerAddress?.status).toBe("fuzzy_match");
+    expect(bottlerAddress?.method).toBe("category_swap");
+  });
 });

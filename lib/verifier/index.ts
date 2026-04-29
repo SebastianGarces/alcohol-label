@@ -1,5 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { matchField, tiebreakResolved, wine14Crossed } from "@/lib/match/field";
+import {
+  categorySwapPartner,
+  detectCategorySwap,
+  matchField,
+  tiebreakResolved,
+  wine14Crossed,
+} from "@/lib/match/field";
 import { verifyWarning } from "@/lib/match/warning";
 import { type Application, requiredFields } from "@/lib/schema/application";
 import type { ExtractedField, LabelExtract, WarningExtract } from "@/lib/schema/extract";
@@ -209,7 +215,21 @@ async function runFieldChecks(
   }
 
   void prepared; // reserved for future per-field re-OCR; keeps signature stable.
-  return out;
+  return applyCategorySwapDetection(out, labelExtract);
+}
+
+function applyCategorySwapDetection(
+  results: FieldResult[],
+  labelExtract: LabelExtract,
+): FieldResult[] {
+  return results.map((r) => {
+    if (r.status !== "missing" || !r.applicationValue) return r;
+    const partnerKey = categorySwapPartner(r.field);
+    if (!partnerKey) return r;
+    const partner = labelExtract[partnerKey] as ExtractedField;
+    const swap = detectCategorySwap(r.field, r.applicationValue, partner);
+    return swap ?? r;
+  });
 }
 
 function computeOverallStatus(fields: FieldResult[], warning: WarningResult): OverallStatus {

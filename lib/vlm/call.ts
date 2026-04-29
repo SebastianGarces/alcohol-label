@@ -48,8 +48,12 @@ function isRetryable(err: unknown): boolean {
 }
 
 function isAuthError(err: unknown): boolean {
-  if (statusOf(err) === 401) return true;
-  return err instanceof Error && /401|unauthor/i.test(err.message);
+  const status = statusOf(err);
+  if (status === 401 || status === 402 || status === 403) return true;
+  return (
+    err instanceof Error &&
+    /401|402|403|unauthor|insufficient credit|payment required/i.test(err.message)
+  );
 }
 
 async function singleAttempt(

@@ -1,9 +1,10 @@
 "use client";
 
-import { ImagePlus, RotateCcw } from "lucide-react";
+import { ImagePlus, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
+import { ImagePreview } from "@/components/ui/ImagePreview";
 import { cn } from "@/lib/utils";
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -56,25 +57,24 @@ export function LabelDropzone({
   if (file && previewUrl) {
     return (
       <div className="flex flex-col gap-3">
-        <div className="overflow-hidden rounded-xl border bg-muted">
-          {/* biome-ignore lint/performance/noImgElement: blob: URLs cannot be served through next/image */}
-          <img
-            src={previewUrl}
-            alt="Selected label"
-            className="mx-auto max-h-96 w-auto object-contain"
-          />
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {file.name} · {(file.size / 1024).toFixed(0)} KB
+        <ImagePreview
+          src={previewUrl}
+          alt={`Selected label · ${file.name}`}
+          caption={`${file.name} · ${formatFileSize(file.size)}`}
+          className="w-full"
+          imgClassName="max-h-96"
+        />
+        <p className="text-base text-graphite">
+          {file.name} · {formatFileSize(file.size)}{" "}
+          <span className="text-pencil">· click image to enlarge</span>
         </p>
         <Button
           type="button"
           variant="outline"
-          size="sm"
           onClick={() => onFile(null)}
           className="w-fit gap-2"
         >
-          <RotateCcw className="size-4" />
+          <RefreshCw className="size-4" />
           Choose a different image
         </Button>
       </div>
@@ -86,27 +86,32 @@ export function LabelDropzone({
       <div
         {...getRootProps({
           className: cn(
-            "flex min-h-48 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 text-center transition focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
+            "flex min-h-48 cursor-pointer flex-col items-center justify-center gap-3 rounded-md border p-8 text-center transition focus-within:ring-2 focus-within:ring-rust focus-within:ring-offset-2",
             isDragActive
-              ? "border-primary bg-primary/5"
+              ? "border-rust bg-rust-tint"
               : rejection
-                ? "border-red-300 bg-red-50"
-                : "border-slate-300 bg-slate-50 hover:bg-slate-100",
+                ? "border-fail-rule bg-fail-tint"
+                : "border-ledger bg-bone hover:bg-bone/80",
           ),
         })}
       >
         <input {...getInputProps()} aria-label="Upload label image" />
-        <ImagePlus aria-hidden className="size-10 text-slate-500" />
+        <ImagePlus aria-hidden className="size-10 text-pencil" />
         <div className="flex flex-col gap-1">
-          <p className="text-base font-medium">Drop a label image, or click to browse</p>
-          <p className="text-sm text-muted-foreground">JPG or PNG up to 5 MB</p>
+          <p className="text-base font-medium text-ink">Drop a label image, or click to browse</p>
+          <p className="text-base text-graphite">JPG or PNG up to 5 MB</p>
         </div>
       </div>
       {rejection ? (
-        <p role="alert" className="text-sm text-red-800">
+        <p role="alert" className="text-base text-fail-ink">
           {rejection}
         </p>
       ) : null}
     </div>
   );
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }

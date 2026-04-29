@@ -12,14 +12,17 @@ import { explainRejection as runExplainRejection } from "@/lib/vlm/explain";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
-function authError(): AppError {
+function authError(detail?: string): AppError {
   Sentry.withScope((scope) => {
     scope.setTag("error.kind", "auth");
-    Sentry.captureMessage("OpenRouter auth error", "error");
+    Sentry.captureMessage(`OpenRouter auth error${detail ? `: ${detail}` : ""}`, "error");
   });
+  const isBilling = detail ? /402|insufficient credit|payment/i.test(detail) : false;
   return {
     kind: "auth_error",
-    message: "Server configuration error — see deployment notes.",
+    message: isBilling
+      ? "The model provider account is out of credits. Please top up to continue."
+      : "Server configuration error — see deployment notes.",
   };
 }
 
@@ -89,7 +92,7 @@ export async function verifyLabelAction(
       };
     }
     if (err instanceof VlmAuthError) {
-      return { ok: false, error: authError() };
+      return { ok: false, error: authError(err.message) };
     }
     Sentry.captureException(err);
     return {
@@ -139,7 +142,7 @@ export async function explainRejectionAction(
       };
     }
     if (err instanceof VlmAuthError) {
-      return { ok: false, error: authError() };
+      return { ok: false, error: authError(err.message) };
     }
     Sentry.captureException(err);
     return {

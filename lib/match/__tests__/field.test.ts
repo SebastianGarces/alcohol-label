@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { matchField, tiebreakResolved, wine14Crossed } from "../field";
+import {
+  categorySwapPartner,
+  detectCategorySwap,
+  matchField,
+  tiebreakResolved,
+  wine14Crossed,
+} from "../field";
 
 const ext = (value: string | null, confidence = 0.95) => ({ value, confidence });
 
@@ -144,6 +150,61 @@ describe("tiebreakResolved", () => {
       "different word",
     );
     expect(r.status).toBe("mismatch");
+  });
+});
+
+describe("detectCategorySwap", () => {
+  it("partner map covers both directions", () => {
+    expect(categorySwapPartner("bottlerName")).toBe("importerName");
+    expect(categorySwapPartner("bottlerAddress")).toBe("importerAddress");
+    expect(categorySwapPartner("importerName")).toBe("bottlerName");
+    expect(categorySwapPartner("importerAddress")).toBe("bottlerAddress");
+    expect(categorySwapPartner("brandName")).toBeUndefined();
+  });
+
+  it("demotes a missing bottler when the same name is on the label as importer", () => {
+    const r = detectCategorySwap(
+      "bottlerName",
+      "Velvet Crow Spirits LLC",
+      ext("Velvet Crow Spirits LLC"),
+    );
+    expect(r).not.toBeNull();
+    expect(r?.status).toBe("fuzzy_match");
+    expect(r?.method).toBe("category_swap");
+    expect(r?.rationale).toMatch(/bottler/);
+    expect(r?.rationale).toMatch(/importer/);
+    expect(r?.rationale).toMatch(/27 CFR 5\.66 vs 5\.67/);
+  });
+
+  it("demotes a missing bottler address using token-set match against the importer address", () => {
+    const r = detectCategorySwap(
+      "bottlerAddress",
+      "88 Mission Street, San Diego, CA",
+      ext("88 Mission St\nSan Diego, CA"),
+    );
+    expect(r).not.toBeNull();
+    expect(r?.method).toBe("category_swap");
+    expect(r?.status).toBe("fuzzy_match");
+  });
+
+  it("works in the reverse direction (missing importer matches the bottler slot)", () => {
+    const r = detectCategorySwap(
+      "importerName",
+      "Velvet Crow Spirits LLC",
+      ext("Velvet Crow Spirits LLC"),
+    );
+    expect(r?.method).toBe("category_swap");
+    expect(r?.rationale).toMatch(/27 CFR 5\.67 vs 5\.66/);
+  });
+
+  it("returns null when the partner slot has no value on the label", () => {
+    expect(detectCategorySwap("bottlerName", "Velvet Crow Spirits LLC", ext(null))).toBeNull();
+  });
+
+  it("returns null when the partner value is unrelated", () => {
+    expect(
+      detectCategorySwap("bottlerName", "Velvet Crow Spirits LLC", ext("Heaven Hill Distillery")),
+    ).toBeNull();
   });
 });
 
