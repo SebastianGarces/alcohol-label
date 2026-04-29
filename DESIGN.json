@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-04-28T00:00:00Z",
+  "title": "Design System: TTB Label Verifier",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "oklch(0.985 0.008 85)",
+        "tonalRamp": [
+          "oklch(0.18 0.012 80)",
+          "oklch(0.30 0.012 80)",
+          "oklch(0.42 0.011 80)",
+          "oklch(0.58 0.010 80)",
+          "oklch(0.78 0.012 80)",
+          "oklch(0.92 0.010 80)",
+          "oklch(0.965 0.012 85)",
+          "oklch(0.985 0.008 85)"
+        ]
+      },
+      "bone": {
+        "role": "neutral",
+        "displayName": "Bone",
+        "canonical": "oklch(0.965 0.012 85)",
+        "tonalRamp": [
+          "oklch(0.20 0.012 80)",
+          "oklch(0.32 0.012 80)",
+          "oklch(0.44 0.011 80)",
+          "oklch(0.60 0.010 80)",
+          "oklch(0.78 0.012 80)",
+          "oklch(0.90 0.012 82)",
+          "oklch(0.965 0.012 85)",
+          "oklch(0.985 0.008 85)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.18 0.012 80)",
+        "tonalRamp": [
+          "oklch(0.10 0.012 80)",
+          "oklch(0.18 0.012 80)",
+          "oklch(0.28 0.012 80)",
+          "oklch(0.42 0.011 80)",
+          "oklch(0.58 0.010 80)",
+          "oklch(0.78 0.012 80)",
+          "oklch(0.92 0.010 80)",
+          "oklch(0.985 0.008 85)"
+        ]
+      },
+      "rust": {
+        "role": "primary",
+        "displayName": "Iron-Oxide Rust",
+        "canonical": "oklch(0.55 0.13 40)",
+        "tonalRamp": [
+          "oklch(0.20 0.08 40)",
+          "oklch(0.30 0.11 40)",
+          "oklch(0.40 0.13 40)",
+          "oklch(0.45 0.14 40)",
+          "oklch(0.55 0.13 40)",
+          "oklch(0.70 0.10 42)",
+          "oklch(0.85 0.06 45)",
+          "oklch(0.96 0.025 50)"
+        ]
+      },
+      "pass-ink": {
+        "role": "secondary",
+        "displayName": "Forest Pass",
+        "canonical": "oklch(0.42 0.10 145)",
+        "tonalRamp": [
+          "oklch(0.18 0.06 145)",
+          "oklch(0.28 0.08 145)",
+          "oklch(0.42 0.10 145)",
+          "oklch(0.55 0.10 145)",
+          "oklch(0.70 0.08 145)",
+          "oklch(0.84 0.06 145)",
+          "oklch(0.94 0.04 145)",
+          "oklch(0.965 0.035 145)"
+        ]
+      },
+      "review-ink": {
+        "role": "secondary",
+        "displayName": "Library Amber",
+        "canonical": "oklch(0.48 0.12 80)",
+        "tonalRamp": [
+          "oklch(0.22 0.07 80)",
+          "oklch(0.34 0.10 80)",
+          "oklch(0.48 0.12 80)",
+          "oklch(0.60 0.12 80)",
+          "oklch(0.74 0.10 82)",
+          "oklch(0.86 0.07 85)",
+          "oklch(0.94 0.05 88)",
+          "oklch(0.965 0.05 90)"
+        ]
+      },
+      "fail-ink": {
+        "role": "secondary",
+        "displayName": "Archive Red",
+        "canonical": "oklch(0.42 0.16 25)",
+        "tonalRamp": [
+          "oklch(0.20 0.10 25)",
+          "oklch(0.30 0.13 25)",
+          "oklch(0.42 0.16 25)",
+          "oklch(0.54 0.16 25)",
+          "oklch(0.68 0.13 25)",
+          "oklch(0.82 0.08 25)",
+          "oklch(0.94 0.04 25)",
+          "oklch(0.965 0.04 25)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page titles only — one per page (\"TTB Label Verifier\", \"How this tool works\")."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section titles within a page (\"Application data\", \"Government health warning\")."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card titles, field-row names, status-banner status word."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All paragraphs, rationale lines, instructional copy. 18px floor; max 70ch on text-heavy pages."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase metadata — \"APPLICATION\" / \"LABEL\" column headers, badge text, table headers."
+      },
+      "mono": {
+        "displayName": "Mono (Witness Voice)",
+        "purpose": "Extracted values, normalized values, diff text, warning-statement quotes, regulation citations."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-lift",
+        "value": "0 1px 0 oklch(0.92 0.01 80), 0 8px 24px -12px oklch(0.18 0.012 80 / 0.10)",
+        "purpose": "The one allowed lift. Used on the result card and the application-data form artifact. A 1px hairline plus a soft, low-spread underglow. Never adopted by smaller components."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-state",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "ease-out-quart. Default easing for state transitions (hover, focus, status changes). 120-180ms duration."
+      },
+      {
+        "name": "duration-fast",
+        "value": "120ms",
+        "purpose": "Hover and focus feedback."
+      },
+      {
+        "name": "duration-state",
+        "value": "180ms",
+        "purpose": "Larger state transitions (banner appearing, badge swapping)."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The terminal CTA — \"Verify label\", \"Run batch\". Rust fill, paper text, 48px tall. One per screen.",
+      "html": "<button class=\"ds-btn-primary\">Verify label</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 24px; background: oklch(0.55 0.13 40); color: oklch(0.985 0.008 85); border: 1px solid oklch(0.45 0.14 40); border-radius: 8px; font-family: 'Geist', system-ui, sans-serif; font-size: 18px; font-weight: 500; letter-spacing: -0.005em; cursor: pointer; transition: background 120ms cubic-bezier(0.22,1,0.36,1), transform 80ms cubic-bezier(0.22,1,0.36,1); } .ds-btn-primary:hover { background: oklch(0.45 0.14 40); } .ds-btn-primary:focus-visible { outline: 2px solid oklch(0.18 0.012 80); outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary affordance — \"Try a sample\", \"Reset\". Paper fill, ink text, 1px rule border.",
+      "html": "<button class=\"ds-btn-outline\">Try a sample</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 24px; background: oklch(0.985 0.008 85); color: oklch(0.18 0.012 80); border: 1px solid oklch(0.78 0.012 80); border-radius: 8px; font-family: 'Geist', system-ui, sans-serif; font-size: 18px; font-weight: 500; cursor: pointer; transition: background 120ms cubic-bezier(0.22,1,0.36,1); } .ds-btn-outline:hover { background: oklch(0.965 0.012 85); } .ds-btn-outline:focus-visible { outline: 2px solid oklch(0.18 0.012 80); outline-offset: 2px; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text input — 48px tall (the floor; current code drifts to 32px). Paper fill, rule border, ink text, pencil placeholder.",
+      "html": "<label class=\"ds-input-wrap\"><span class=\"ds-input-label\">Brand name <em>*</em></span><input class=\"ds-input\" placeholder=\"Old Tom Distillery\"></label>",
+      "css": ".ds-input-wrap { display: flex; flex-direction: column; gap: 6px; font-family: 'Geist', system-ui, sans-serif; } .ds-input-label { font-size: 14px; font-weight: 500; color: oklch(0.18 0.012 80); } .ds-input-label em { color: oklch(0.42 0.16 25); font-style: normal; margin-left: 4px; } .ds-input { display: block; width: 100%; height: 48px; padding: 0 14px; background: oklch(0.985 0.008 85); color: oklch(0.18 0.012 80); border: 1px solid oklch(0.78 0.012 80); border-radius: 8px; font-family: 'Geist', system-ui, sans-serif; font-size: 18px; line-height: 1.4; outline: none; transition: border-color 120ms cubic-bezier(0.22,1,0.36,1), box-shadow 120ms cubic-bezier(0.22,1,0.36,1); } .ds-input::placeholder { color: oklch(0.58 0.010 80); } .ds-input:focus-visible { border-color: oklch(0.18 0.012 80); box-shadow: 0 0 0 3px oklch(0.55 0.13 40 / 0.20); }"
+    },
+    {
+      "name": "Status Banner — FAIL",
+      "kind": "custom",
+      "refersTo": "status-banner-fail",
+      "description": "The marquee verdict header on the result page. Status word in headline weight, subtitle in body, dated meta line. The icon + word + subtitle together carry the status (color alone never).",
+      "html": "<div class=\"ds-banner ds-banner-fail\" role=\"status\"><svg class=\"ds-banner-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M15 9l-6 6\"/><path d=\"M9 9l6 6\"/></svg><div class=\"ds-banner-body\"><h2 class=\"ds-banner-title\">FAIL</h2><p class=\"ds-banner-subtitle\">One or more required fields do not match, or the government warning is non-compliant.</p><p class=\"ds-banner-meta\">Verified in 2.4 s</p></div></div>",
+      "css": ".ds-banner { display: flex; align-items: flex-start; gap: 16px; padding: 24px; border-radius: 14px; border: 2px solid; font-family: 'Geist', system-ui, sans-serif; box-shadow: 0 1px 0 oklch(0.92 0.01 80), 0 8px 24px -12px oklch(0.18 0.012 80 / 0.10); } .ds-banner-fail { background: oklch(0.965 0.04 25); border-color: oklch(0.78 0.10 25); color: oklch(0.42 0.16 25); } .ds-banner-icon { flex-shrink: 0; width: 40px; height: 40px; margin-top: 2px; } .ds-banner-body { display: flex; flex-direction: column; gap: 4px; } .ds-banner-title { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.08; } .ds-banner-subtitle { margin: 0; font-size: 18px; line-height: 1.6; } .ds-banner-meta { margin: 4px 0 0; font-size: 13px; opacity: 0.75; }"
+    },
+    {
+      "name": "Field Row — Match",
+      "kind": "custom",
+      "refersTo": "field-row",
+      "description": "The signature evidentiary row. Three regions: name + rationale (left), application/label values in mono (center), status badge (right). One row per verified field.",
+      "html": "<div class=\"ds-field-row\"><div class=\"ds-field-meta\"><p class=\"ds-field-name\">Brand name</p><p class=\"ds-field-rationale\">Exact match after whitespace normalization.</p></div><div class=\"ds-field-values\"><div><span class=\"ds-field-vlabel\">APPLICATION</span><code class=\"ds-field-value\">Stone's Throw</code></div><div><span class=\"ds-field-vlabel\">LABEL</span><code class=\"ds-field-value\">STONE'S THROW</code></div></div><span class=\"ds-badge ds-badge-pass\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6L9 17l-5-5\"/></svg>Match</span></div>",
+      "css": ".ds-field-row { display: grid; grid-template-columns: 16rem 1fr auto; gap: 16px; align-items: start; padding: 16px; background: oklch(0.985 0.008 85); border: 1px solid oklch(0.92 0.01 80); border-radius: 8px; font-family: 'Geist', system-ui, sans-serif; } .ds-field-meta { display: flex; flex-direction: column; gap: 4px; } .ds-field-name { margin: 0; font-size: 18px; font-weight: 600; color: oklch(0.18 0.012 80); } .ds-field-rationale { margin: 0; font-size: 15px; line-height: 1.5; color: oklch(0.42 0.011 80); } .ds-field-values { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .ds-field-vlabel { display: block; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.58 0.010 80); margin-bottom: 4px; } .ds-field-value { display: block; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 15px; color: oklch(0.18 0.012 80); background: oklch(0.965 0.012 85); padding: 6px 8px; border-radius: 4px; } .ds-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; height: fit-content; } .ds-badge svg { width: 14px; height: 14px; } .ds-badge-pass { background: oklch(0.965 0.035 145); color: oklch(0.42 0.10 145); }"
+    },
+    {
+      "name": "Warning Red-line",
+      "kind": "custom",
+      "refersTo": "warning-redline",
+      "description": "The Government Health Warning verification — canonical text vs extracted text, with diff overlay. The marked-up filing's most consequential artifact.",
+      "html": "<section class=\"ds-redline\"><header class=\"ds-redline-header\"><h3 class=\"ds-redline-title\">Government health warning</h3><span class=\"ds-redline-pill ds-redline-pill-fail\">Non-compliant</span></header><div class=\"ds-redline-grid\"><article><h4 class=\"ds-redline-vlabel\">CANONICAL (27 CFR 16.21)</h4><p class=\"ds-redline-block\">GOVERNMENT WARNING: According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects.</p></article><article><h4 class=\"ds-redline-vlabel\">READ FROM LABEL</h4><p class=\"ds-redline-block\">Government Warning: According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects.</p></article></div><p class=\"ds-redline-flag\"><span class=\"ds-redline-dot ds-redline-dot-fail\" aria-hidden=\"true\"></span><span>Header is ALL CAPS</span><strong class=\"ds-redline-flag-fail\">Failed</strong></p></section>",
+      "css": ".ds-redline { display: flex; flex-direction: column; gap: 12px; padding: 20px; border: 1px solid oklch(0.92 0.01 80); border-radius: 8px; background: oklch(0.985 0.008 85); font-family: 'Geist', system-ui, sans-serif; } .ds-redline-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; } .ds-redline-title { margin: 0; font-size: 18px; font-weight: 600; color: oklch(0.18 0.012 80); } .ds-redline-pill { padding: 4px 12px; border-radius: 9999px; border: 1px solid; font-size: 13px; font-weight: 500; } .ds-redline-pill-fail { background: oklch(0.965 0.04 25); border-color: oklch(0.78 0.10 25); color: oklch(0.42 0.16 25); } .ds-redline-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } .ds-redline-vlabel { margin: 0 0 6px; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.58 0.010 80); font-family: 'Geist', system-ui, sans-serif; } .ds-redline-block { margin: 0; padding: 12px; background: oklch(0.965 0.012 85); border: 1px solid oklch(0.92 0.01 80); border-radius: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; line-height: 1.55; color: oklch(0.18 0.012 80); } .ds-redline-flag { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; color: oklch(0.18 0.012 80); } .ds-redline-dot { display: inline-block; width: 10px; height: 10px; border-radius: 9999px; flex-shrink: 0; } .ds-redline-dot-fail { background: oklch(0.42 0.16 25); } .ds-redline-flag-fail { color: oklch(0.42 0.16 25); font-weight: 500; }"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Horizontal page nav — Single | Batch | About. 48px-tall ghost links; active state inverts to ink fill / paper text.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><a class=\"ds-nav-link ds-nav-link-active\" href=\"/\" aria-current=\"page\">Single</a><a class=\"ds-nav-link\" href=\"/batch\">Batch</a><a class=\"ds-nav-link\" href=\"/about\">About</a></nav>",
+      "css": ".ds-nav { display: inline-flex; gap: 4px; font-family: 'Geist', system-ui, sans-serif; } .ds-nav-link { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; height: 48px; padding: 0 16px; border-radius: 6px; font-size: 18px; font-weight: 500; color: oklch(0.18 0.012 80); text-decoration: none; transition: background 120ms cubic-bezier(0.22,1,0.36,1); } .ds-nav-link:hover { background: oklch(0.965 0.012 85); } .ds-nav-link:focus-visible { outline: 2px solid oklch(0.18 0.012 80); outline-offset: 2px; } .ds-nav-link-active { background: oklch(0.18 0.012 80); color: oklch(0.985 0.008 85); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Marked-Up Filing",
+    "overview": "This is a tool that should look like a printed federal filing being marked up in real time — not a SaaS dashboard, not a Linear-clone, not a 'modernized' rebrand of a government form. The reviewer is doing the same job they've done for years (compare label to application, flag mismatches, hand the file back), and the interface is their evidence kit: a clean cream sheet, ink-black type, and a single rust-red pen for citations and red-lines. The AI's job is to read; the reviewer's job is to decide. The visual system enforces that hierarchy at every level.\n\nThe discipline borrowed from editorial publishing is real — typographic hierarchy, dense-but-legible body text, mono-set citations, dated artifacts — but it is executed in sans-serif and monospace, never serifs. Cream + ink + rust is the entire palette of voice; status colors (forest-green, library-amber, archive-red) are quiet, library-stamp-y, never candy. Borders carry separation. Shadows are reserved for 'this artifact is the result page, elevated above the form' — and used exactly once.",
+    "keyCharacteristics": [
+      "Cream-paper surface; ink-black text; rust accent used as the editor's red pen.",
+      "Sans-serif throughout; monospace for diffs, normalized values, and citations.",
+      "18px body floor; 48px minimum touch height; status communicated by color + icon + text simultaneously.",
+      "Borders carry layout; shadows are reserved (one allowed: the result-card lift).",
+      "Restrained motion: state changes only, no choreography, no decoration.",
+      "Editorial discipline (hierarchy, citations, red-lines) executed in a sans type system."
+    ],
+    "rules": [
+      {
+        "name": "The One Pen Rule",
+        "body": "Rust is the editor's pen, and it is the only accent voice in the system. It appears on the primary CTA, red-line annotation underlines, and citation links. Never used as a fill, never gradient, never combined with another saturated accent.",
+        "section": "colors"
+      },
+      {
+        "name": "The Cream Floor Rule",
+        "body": "Page surface is paper, never #fff. Card and inset surface is paper or bone, never a third lighter variant invented at the component level. If a surface needs to feel lifted, it gets a 1px ledger border and one shadow-card — not a brighter fill.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status-Trio Rule",
+        "body": "Every status color must appear with a matching icon and a matching text label. A green dot alone, a red border alone, an amber fill alone — all forbidden. Color-blind users must read the same verdict.",
+        "section": "colors"
+      },
+      {
+        "name": "The 18px Floor Rule",
+        "body": "Body type never falls below 18px. The persona is a 73-year-old reviewer in office light; 14px utility text exists for badges and labels only, and never carries semantic content (it always restates a neighboring 18px line).",
+        "section": "typography"
+      },
+      {
+        "name": "The Two-Voice Rule",
+        "body": "The system has exactly two type voices: Geist (the narrator) and Geist Mono (the witness). Mono is reserved for things that the reviewer would set in monospace if they were marking up the filing by hand — extracted text, the canonical regulation, the diff. Don't use mono decoratively.",
+        "section": "typography"
+      },
+      {
+        "name": "The Citation Rule",
+        "body": "Regulation references (e.g. 27 CFR 16.21) are always typeset in Mono and may carry a Rust underline. They are the only place rust appears in body copy.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Page Rule",
+        "body": "The default surface is flat. If a component wants a shadow, the answer is 'use a border instead' — until you can name a specific reason it needs to lift off the page. There is exactly one named lift in the system (shadow-card); inventing more is forbidden.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Border-Carries-Layout Rule",
+        "body": "Visual separation between regions is always carried by a 1px ledger or rule border, never by a tonal step. A 'subtle background variation' between regions is forbidden — it is illegible at 73-year-old contrast tolerances and reads as 'AI made it.'",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use paper (oklch(0.985 0.008 85)) for every page surface. Never #fff.",
+      "Do set body type at 18px and headings at ≥1.25 ratio steps. The 18px floor is a promise to a 73-year-old reviewer.",
+      "Do make every interactive target ≥48px tall, including inputs. The current h-8 (32px) inputs from components/ui/input.tsx are a drift and must be migrated to 48px.",
+      "Do show the receipts. Every field row carries application value, label value, and the rationale that produced the verdict — in mono, side-by-side.",
+      "Do set citations (e.g. 27 CFR 16.21) in Geist Mono and let them carry a rust underline. That is the citation rule.",
+      "Do use color + icon + text together for every status. A reviewer with red-green color blindness must read the same verdict.",
+      "Do keep motion to state-change feedback (120-180ms ease-out). Borders lighten, surfaces tint, focus rings appear. Nothing translates more than 1px. Nothing scales. Nothing animates entrances."
+    ],
+    "donts": [
+      "Don't use #000 or #fff anywhere. Pure black is dead; pure white is cold. Every neutral is tinted toward the warm spine of the palette.",
+      "Don't use Times New Roman, Georgia, or any serif body type. Editorial discipline in sans-serif — never editorial costume in serifs.",
+      "Don't introduce a third accent color. Rust is the editor's pen and it is the only one. Violet, blue, teal, purple — all forbidden as accents. The current violet-300 / violet-50 / violet-900 'Reviewed by Sonnet' badge is a drift and must migrate to a neutral mark.",
+      "Don't use side-stripe borders (border-left: 4px solid) on cards, callouts, or alerts. Forbidden. Use a full border + status-tint surface instead.",
+      "Don't wrap content in nested cards. Nested cards are always wrong.",
+      "Don't use shadows on individual list rows or buttons. Shadow is reserved for the result and form artifacts only — the named shadow-card lift.",
+      "Don't ship gradient text or background-clip: text decorative type. Forbidden. Hierarchy is carried by weight and size, not by color spectacle.",
+      "Don't use sparkle icons decoratively to signal 'AI.' We have a literal 'Reviewed by Sonnet' affordance for that; decorative sparkle icons are the AI-bro SaaS tell.",
+      "Don't style the result with confetti, 'Looks great!' toasts, or exclamation-pointed copy. Voice is plainspoken: 'Brand name matches' not 'Looks like a match!'",
+      "Don't put a 'Powered by AI' badge anywhere in the product.",
+      "Don't introduce a dark mode without revisiting PRODUCT.md. The persona is a TTB reviewer in office light. The current .dark block in globals.css is unused legacy and should be removed.",
+      "Don't use raw Tailwind palette names (green-700, red-200, slate-50, violet-300) in new code. Migrate to the named tokens above."
+    ]
+  }
+}

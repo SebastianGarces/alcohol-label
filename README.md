@@ -3,7 +3,6 @@
 > Compare alcohol label artwork to TTB application data — single labels in <5s, batches of 200–300 with live progress and CSV export.
 
 - **Live demo:** https://alcohol-label.vercel.app/
-- **Demo video (90–120s):** _<Loom / YouTube unlisted link to be added>_
 - **Repo:** this repository
 
 This is a take-home prototype for the TTB Compliance Division reviewer flow described in `dev-docs/brief.txt`. The goal is a working core that a senior reviewer could actually use, with the warning verification airtight and smart-match transparent.
