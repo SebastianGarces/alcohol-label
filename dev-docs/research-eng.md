@@ -202,7 +202,7 @@ Neon's free tier (0.5 GB storage, 100 CU-hours/mo per project, branching include
 | Lint/format | Biome | 10-25× faster, single config, no plugin friction in a small repo | High |
 | Typecheck | TypeScript strict + `tsc --noEmit` in CI | Baseline quality signal | High |
 | Tests | Vitest on the LLM-response Zod parser (~5 tests) | Highest-value test surface for AI integration | High |
-| E2E | Skip; record a 90s demo video | Playwright cost > value at this budget | High |
+| E2E | Skip; rely on the deployed prototype as the runtime check | Playwright cost > value at this budget | High |
 | Observability | Helicone (proxy) + Sentry (Next.js wizard) | Two short installs, both visible in demo, both free for this volume | High |
 | Image storage | None (process and forget); R2 if you want thumbnails persisted | Brief says no persistence required; only add R2 if Neon-backed history needs image URLs | Medium |
 

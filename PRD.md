@@ -18,7 +18,7 @@ Phase 1 (Scaffold + deploy + warmup)        ~2h
             └── Phase 4 (Hardening)         ~2h    ← shippable here
                  └── Phase 5 (Batch mode)   ~5h    ← FULL DEMO-READY
                       └── Phase 6 (Stretch) ~3h    ← time-permitting
-                           └── Phase 7 (README + Demo) ~2h
+                           └── Phase 7 (README + Writeup) ~2h
 ```
 
 ---
@@ -343,13 +343,13 @@ Phase 1 (Scaffold + deploy + warmup)        ~2h
 
 ### Acceptance Criteria
 - Don't break Phase 5
-- Each shipped innovation visible in demo video
+- Each shipped innovation visible on the deployed prototype
 
 ---
 
-## Phase 7: README + Writeup + Demo
+## Phase 7: README + Writeup
 
-**Goal:** Submission-ready repo and demo.
+**Goal:** Submission-ready repo.
 **Depends on:** Phase 6.
 **Estimated effort:** ~2h.
 
@@ -358,7 +358,6 @@ Phase 1 (Scaffold + deploy + warmup)        ~2h
 **README.md** — top-level:
 - [ ] One-line pitch
 - [ ] Live demo URL (Vercel)
-- [ ] Demo video link (Loom or YouTube unlisted)
 - [ ] Quick start (`bun install`, `bun dev`, env vars)
 - [ ] Architecture diagram (ASCII): browser → Server Action / API → OpenRouter → Anthropic Claude
 - [ ] Tech stack summary table
@@ -383,19 +382,6 @@ Phase 1 (Scaffold + deploy + warmup)        ~2h
 - [ ] `samples.json` manifest with expected verdicts
 - [ ] If any were AI-generated: note that in README
 
-**Demo video (90-120s):**
-- [ ] Script outline:
-  1. Open landing page (5s)
-  2. Click "Try a sample" → STONE'S THROW (10s)
-  3. Submit, watch loading states, see PASS with smart-match badge (15s)
-  4. Sample → title-case warning → FAIL with red-line view (15s)
-  5. Click "explain this rejection" → see Sonnet explanation (10s)
-  6. Switch to `/batch`, drop 50 labels + CSV (10s)
-  7. Watch live progress, sort table, click row for detail (20s)
-  8. Show OpenRouter activity dashboard — cost + latency + which model (Haiku vs Sonnet) per call (10s)
-  9. Mention key tradeoffs: Haiku speed, Sonnet escalation (5s)
-- [ ] Record at 1080p, screen + voiceover
-
 **Final checks:**
 - [ ] `bun lint` zero warnings
 - [ ] `bunx tsc --noEmit` clean
@@ -405,7 +391,6 @@ Phase 1 (Scaffold + deploy + warmup)        ~2h
 
 ### Acceptance Criteria
 - Reviewer can `git clone`, set env vars, `bun install`, `bun dev` and have it work
-- Demo video <2 min covers all key features + innovations
 - APPROACH.md explicitly addresses all 6 evaluation criteria
 - OpenRouter activity link / screenshot is current
 

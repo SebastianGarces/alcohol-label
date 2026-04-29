@@ -36,7 +36,7 @@ This drove three concrete habits:
 - **No Postgres / Redis / SQLite.** Stateless server is the entire deployment story.
 - **No OpenCV / dedicated image preprocessing.** sharp's 4 lines of code do the job.
 - **No auth.** Out of scope for a prototype.
-- **No e2e tests.** Demo video is the substitute (per PRD).
+- **No e2e tests.** The deployed prototype is the runtime check — brief deliverables don't require e2e.
 
 Full ADR-by-ADR rationale is in `presearch.md` (13 ADRs).
 

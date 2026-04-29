@@ -188,7 +188,7 @@ There is no database. The only browser persistence is an IndexedDB cache for the
   - Phase 4 (hardening): 5 tests
   - Phase 5 (batch): 12 tests
 - Test naming: `describe('verifier > brand name')`, not implementation-detail names.
-- **No e2e tests.** Demo video is the substitute.
+- **No e2e tests.** The deployed prototype is the runtime check; brief deliverables don't require e2e or video.
 
 ## Environment Variables
 

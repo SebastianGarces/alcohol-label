@@ -68,7 +68,7 @@ Full research at `dev-docs/research-tech.md`.
 | UI | **shadcn/ui + Tailwind v4** | "Own the code" lets us bump default sizes for senior UX cheaply |
 | Upload | **react-dropzone + TanStack Query v5** | Free per-file progress; concurrency limiter |
 | Lint/format | **Biome** | 10-25× faster than ESLint+Prettier; one config |
-| Tests | **Vitest only** | E2E too expensive; record demo video instead |
+| Tests | **Vitest only** | E2E too expensive for take-home scope; deployed prototype is the runtime check |
 | Observability | **OpenRouter dashboard + Sentry** | OpenRouter shows per-request cost/latency/model natively; one less proxy hop than Helicone; ~50ms saved |
 | Storage | **None (IndexedDB for batch)** | No PII, no DB; better-sqlite3 dies on Vercel anyway |
 
@@ -131,7 +131,7 @@ Full research at `dev-docs/research-eng.md`.
 |---|---|---|
 | MVP demo-ready | End of Phase 4 (~12h) | Single-label verify, deployed |
 | Full demo-ready | End of Phase 5 (~16h) | + batch upload |
-| Submission-ready | End of Phase 7 (~21h) | + writeup + demo video |
+| Submission-ready | End of Phase 7 (~21h) | + writeup |
 
 ### 1.5 Data Sensitivity
 
