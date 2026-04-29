@@ -13,6 +13,7 @@ import { computeBatchCounts, failedRowIndices } from "@/lib/batch/stats";
 import type { BatchRow, SkippedCsvRow } from "@/lib/schema/batch";
 import type { VerificationResult } from "@/lib/schema/result";
 import { resizeImageForUpload } from "@/lib/upload/resize";
+import { summarizeBatchTelemetry } from "@/lib/utils";
 import { BatchDropzone, type DropPayload } from "./BatchDropzone";
 import { PreflightSummary } from "./PreflightSummary";
 import { ProgressHeader, type ProgressStats } from "./ProgressHeader";
@@ -316,7 +317,15 @@ export function BatchClient() {
     const counts = computeBatchCounts(rows);
     const elapsed = batchStartedAt ? Date.now() - batchStartedAt : 0;
     const etaMs = estimateEtaMs(counts.done, counts.total, elapsed);
-    return { ...counts, etaMs, paused, active: queueActive };
+    const rollup = summarizeBatchTelemetry(rows);
+    return {
+      ...counts,
+      etaMs,
+      paused,
+      active: queueActive,
+      spentUsd: rollup.spentUsd,
+      avgDurationMs: rollup.avgDurationMs,
+    };
   }, [rows, batchStartedAt, paused, queueActive]);
 
   return (

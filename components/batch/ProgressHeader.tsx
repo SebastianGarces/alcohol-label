@@ -3,6 +3,7 @@
 import { Pause, Play, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatEta } from "@/lib/batch/queue";
+import { formatCostUsd, formatDurationSec } from "@/lib/utils";
 
 export type ProgressStats = {
   total: number;
@@ -15,6 +16,8 @@ export type ProgressStats = {
   etaMs: number | null;
   paused: boolean;
   active: boolean;
+  spentUsd: number;
+  avgDurationMs: number | null;
 };
 
 export function ProgressHeader({
@@ -35,16 +38,39 @@ export function ProgressHeader({
       className="flex flex-col gap-3 rounded-xl border border-ledger bg-paper p-5 shadow-card"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <div className="flex flex-wrap items-baseline gap-2 text-base text-ink">
-          <strong className="text-2xl tabular-nums">{stats.done}</strong>
-          <span className="text-graphite">/ {stats.total} done</span>
-          <span className="text-pencil">·</span>
-          <span className="text-pass-ink">{stats.pass} pass</span>
-          <span className="text-pencil">·</span>
-          <span className="text-review-ink">{stats.review} review</span>
-          <span className="text-pencil">·</span>
-          <span className="text-fail-ink">{stats.fail + stats.errored} fail</span>
-          <span className="text-graphite">· ETA {formatEta(stats.etaMs)}</span>
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-baseline gap-2 text-base text-ink">
+            <strong className="text-2xl tabular-nums">{stats.done}</strong>
+            <span className="text-graphite">/ {stats.total} done</span>
+            <span className="text-pencil">·</span>
+            <span className="text-pass-ink">{stats.pass} pass</span>
+            <span className="text-pencil">·</span>
+            <span className="text-review-ink">{stats.review} review</span>
+            <span className="text-pencil">·</span>
+            <span className="text-fail-ink">{stats.fail + stats.errored} fail</span>
+            <span className="text-graphite">· ETA {formatEta(stats.etaMs)}</span>
+          </div>
+          {stats.spentUsd > 0 || stats.avgDurationMs !== null ? (
+            <div className="flex flex-wrap items-baseline gap-2 text-sm text-graphite tabular-nums">
+              <span>
+                <span className="font-semibold text-ink">{formatCostUsd(stats.spentUsd)}</span>{" "}
+                spent
+              </span>
+              {stats.avgDurationMs !== null ? (
+                <>
+                  <span aria-hidden className="text-pencil">
+                    ·
+                  </span>
+                  <span>
+                    avg{" "}
+                    <span className="font-semibold text-ink">
+                      {formatDurationSec(stats.avgDurationMs)}
+                    </span>
+                  </span>
+                </>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         {stats.active ? (
           <div className="flex items-center gap-2">

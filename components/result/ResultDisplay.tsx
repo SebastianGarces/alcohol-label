@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import type { VerificationResult } from "@/lib/schema/result";
 import { FieldRow } from "./FieldRow";
 import { StatusBanner } from "./StatusBanner";
+import { TelemetryFooter } from "./TelemetryFooter";
 import { TieredRoutingNote } from "./TieredRoutingNote";
 import { WarningRedline } from "./WarningRedline";
 
@@ -90,6 +91,7 @@ export function ResultDisplay({
           ))
         )}
       </section>
+      <TelemetryFooter result={result} />
     </div>
   );
 }
