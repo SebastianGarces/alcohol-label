@@ -26,7 +26,7 @@ This drove three concrete habits:
 | OpenRouter via `openai` SDK | Direct Anthropic SDK | User had OpenRouter credits; one SDK + one model registry (`lib/vlm/models.ts`) means swapping Haiku↔Flash is a one-line change |
 | Anthropic Claude (Haiku 4.5 + Sonnet 4.5) | Gemini 2.5 Flash | Gemini is ~3× cheaper input, but the gap is meaningless at take-home scale; Haiku 4.5 wins on stylized-font reading in informal tests; provider-pinned through OpenRouter to avoid silent reroutes |
 | VLM-only (no dedicated OCR) | Google Vision / Textract / PaddleOCR | A modern VLM is OCR + reasoning in one call; OCR services tie on stylized alcohol-label fonts and add latency |
-| No database; server is stateless; IndexedDB only for the I7 explanation cache | Neon Postgres / SQLite | Brief explicitly says no persistence required; the batch is client-orchestrated in-memory and the 24-label demo button reseeds it in one click |
+| No database; server is stateless; IndexedDB only for the I7 explanation cache | Neon Postgres / SQLite | Marcus's IT note ("not storing anything sensitive for this exercise") made statelessness the simplest defensible choice for a prototype; the batch is client-orchestrated in-memory and the 24-label demo button reseeds it in one click |
 | sharp pipeline (rotate → 1568px → JPEG q85) | Cloudinary / serverless image API | Anthropic's recommended max edge is 1568px; sharp also strips EXIF (security) and fixes orientation (Jenny's "weird angles" complaint) |
 | Server-side rate limit (in-memory per-IP) | Upstash / Redis | No infra to provision; per-instance counters are fine for prototype scale |
 | Biome + Vitest | ESLint + Prettier + Jest | Single tool for lint+format with zero config drift; Vitest is faster and matches Bun's defaults |
@@ -77,6 +77,10 @@ Every label produces between two and three LLM calls, and I chose the model for 
 **Prompt-injection defense (architectural, not heuristic):**
 
 The VLM extracts; the server compares. The model never sees both the application data and the label image in one call, so it can't be social-engineered into "deciding" the result. Prompts ask for *facts* ("what is the brand name?"), never for *judgments* ("does this label pass?"). The verdict is computed deterministically in `lib/match/`.
+
+**Observability — prototype today, span-level tracing tomorrow.**
+
+For prototype-stage observability I leaned on two artifacts: OpenRouter's per-key dashboard (cost, latency, finish-reason per request, screenshot in README) and a committed `eval-results.md` produced by the harness in `eval/`. For production I'd wire **Langfuse** (or Helicone, or Braintrust — all comparable in this category) for span-level tracing — extract / warning / escalate / tiebreak as a tree, with tags for `escalated=true` cohorts and `mode=tiered|haiku-only|sonnet-only` if the routing is ever hot-reconfigurable. The decisive factor for not wiring it now: a take-home reviewer doesn't navigate to a third dashboard; the README screenshots and the in-product cost/latency footer (I14) already deliver the same signal at zero reviewer friction.
 
 ---
 
@@ -150,7 +154,7 @@ This stops the verifier from over-flagging wine/beer labels that legally omit AB
 | COLA / TTB Online integration | Not in scope; would require auth + government API access I don't have |
 | PDF export of results | Compliance theatre — CSV is the format reviewers actually paste into spreadsheets |
 | ABV lab-vs-label tolerance enforcement | Brief is form-vs-label only; tolerance is a policy question for the agency |
-| Persistent server-side history / multi-tenant | Brief explicitly says no persistence required |
+| Persistent server-side history / multi-tenant | Marcus's IT note framed statelessness as fine for a prototype; persistence + multi-tenant is the next-hour-of-work, not this hour |
 | Auth, RBAC, audit log | Out of scope for a prototype; would be the *next* hour of work after this |
 | True OCR fallback | VLM-only; if the model can't read the label, the user is told to retry with a clearer photo |
 | Synthetic data generator | Invisible to the reviewer; not worth take-home time |
@@ -190,6 +194,8 @@ This is the table from `presearch.md → Loop 5`, with what was actually shipped
 | I8 | Demo-mode sample labels (5 pre-loaded, SVG-rendered deterministically) | `public/samples/`, `scripts/generate-samples.ts`, `app/page.tsx` | Friction-free evaluation |
 | I11 | Tiered model routing — Haiku → Sonnet escalation; visible badge + tooltip + summary note | `lib/verifier/index.ts`, `lib/vlm/escalate.ts`, `components/result/FieldRow.tsx`, `components/result/TieredRoutingNote.tsx` | Cost+latency optimization that's also visible |
 | I13 | Bottler ↔ importer category-swap detection — demotes MISSING → REVIEW with a "wrong slot" rationale when the application's bottler value appears on the label as the importer (or vice versa) | `lib/match/field.ts → detectCategorySwap`, `lib/verifier/index.ts → applyCategorySwapDetection` | Dave: "judgment, not just matching"; matches how an experienced agent reads imported labels |
+| I14 | Cost & latency telemetry surfaced in-product — every result card and the batch progress bar show the real $/call and ms/call from the OpenRouter usage payload, scored against pricing in `lib/vlm/pricing.ts` | `lib/vlm/call.ts`, `lib/vlm/pricing.ts`, `components/result/TelemetryFooter.tsx`, `components/batch/ProgressHeader.tsx` | Sarah's "5-second rule" + Marcus's $4.2M-rebuild quote — the verifier isn't a black box; reviewers can see it answer those concerns at a glance |
+| I15 | Golden-dataset eval harness with 3-mode comparison — runs all 29 samples through Tiered / Haiku-only / Sonnet-only against real OpenRouter, asserts verdict accuracy + p50/p95 + cost, commits the report so a reviewer can clone, re-run, and verify | `eval/`, `eval-results.md`, `bun run eval:compare` | The methodology a hiring partner can re-run — surfaced a counter-intuitive result (Sonnet-only is *worse* than Tiered or Haiku-only on stylized labels) that reshaped the production roadmap |
 
 ### STRETCH (Phase 6)
 
@@ -230,9 +236,9 @@ Pulled from the brief; explicit acknowledgement that the prototype answers them 
 
 ## 10. If I had another day
 
-In priority order:
-1. **I5 streaming.** Render fields progressively as Haiku and Sonnet calls return. Perceived-latency win without changing the verifier.
-2. **I1 confidence heatmap spike.** Find out empirically whether Haiku returns reliable bboxes; render an overlay on the label image with confidence-tinted boxes.
-3. **Batch results filter on `escalated=true`.** Reviewers might want to see "labels that needed Sonnet" as a triage cohort.
-4. **Concurrent OpenRouter / direct-Anthropic dual path.** Belt-and-suspenders for the demo: if OpenRouter is degraded, fall back to direct Anthropic via env flag.
-5. **A short evaluation harness.** Run all five sample labels through the verifier in a Vitest test that calls the real OpenRouter (gated behind an env flag) and asserts on the verdict — closer to a regression catch for prompt drift.
+The eval harness (I15) shipped, so the regression-catch-for-prompt-drift item is done; the in-product telemetry footer (I14) shipped, so the latency-visibility item is done. What's left is production-readiness, in priority order:
+
+1. **Promote Haiku to the warning step.** The eval surfaced that Haiku-only matches Tiered's accuracy at 55% of the cost ($0.23 vs $0.42). Sonnet's escalation still earns its keep on low-confidence individual fields, but the warning sub-call is a candidate to demote — would need a focused eval on warning-only PASS/FAIL across the 29-case set to verify before flipping the switch in `lib/vlm/models.ts`.
+2. **Span-level tracing via Langfuse / Helicone / Braintrust.** OpenRouter's dashboard shows *what* happened per-call but not *why* — span-level tracing on extract / warning / escalate / tiebreak with `escalated=true` tags would make production debugging a five-minute job instead of a one-hour one. README has the production-roadmap rationale for not wiring it for the prototype.
+3. **Cron-driven golden-set eval.** `bun run eval:compare` nightly on main, deltas to Slack, model upgrades gated on no-accuracy-regression. Closest thing to "CI for the AI."
+4. **I5 streaming.** Render fields progressively as Haiku and Sonnet calls return. Perceived-latency win without changing the verifier — pure-frontend work and the next thing I'd touch if priority shifted from production-hardening to UX polish.

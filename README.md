@@ -120,6 +120,40 @@ Sentry org/project/auth-token are pulled by the Sentry build plugin from `.env.s
 
 ---
 
+## Evaluation
+
+Three execution modes (Tiered, Haiku-only, Sonnet-only), 29 golden samples (5 single-label + 24 batch), all calls go through real OpenRouter with `provider: { order: ['anthropic'], allow_fallbacks: false }` so model identity is pinned. Methodology, per-field accuracy, and per-case verdict diffs are committed in [`eval-results.md`](eval-results.md).
+
+| | **Tiered** (default) | Haiku-only | Sonnet-only |
+|---|---|---|---|
+| Verdict accuracy | 28/29 (96.6%) | 28/29 (96.6%) | 26/29 (89.7%) |
+| p50 latency | 4.0s | 3.2s | 5.5s |
+| Cost per label | $0.0144 | $0.0080 | $0.0239 |
+
+Tiered routing **outperforms** all-Sonnet (96.6% vs 89.7%) at 60% of the cost — Sonnet's verbatim transcription is slightly more "interpretive," which fails the verifier's strict matching on stylized labels (`02-black-pine-malt`, `09-old-anchor-rye`). The Haiku-only run hits the same accuracy as Tiered for $0.23 vs $0.42, which argues for promoting Haiku to the warning-extraction step in production rather than reflexively reaching for Sonnet.
+
+Total run cost across all three modes: **$1.34**. Re-run with:
+
+```bash
+bun run eval            # Tiered only
+bun run eval:compare    # all three modes (regenerates eval-results.md)
+bun run eval:dry        # local dry-run, no API calls
+```
+
+---
+
+## Production roadmap
+
+What I'd ship next, in priority order:
+
+- **Span-level tracing via Langfuse** (or Helicone / Braintrust — comparable in this category) for per-call observability with public dashboard sharing. Deliberately *not* wired for the prototype: OpenRouter's per-key dashboard plus the committed `eval-results.md` already cover the regression-and-cost story without forcing reviewers onto a third surface.
+- **Vercel Blob (or S3) for batch image persistence** so the previously-cut batch-resume feature can ship correctly — a reload currently loses in-memory `File` objects, which makes resume meaningless without blob storage.
+- **Cron-driven golden-set eval** — run `bun run eval:compare` nightly on the merged main, post deltas to Slack, and gate model upgrades on no-accuracy-regression.
+- **Provider failover** — the OpenRouter `allow_fallbacks: false` pin is correct for prototype determinism. For production, add a controlled fallback path (direct Anthropic SDK or a different OpenRouter route) so a single-provider outage doesn't take the verifier down.
+- **Per-tenant rate limit + spend cap** — current limits are global per-IP and per-key; production needs per-applicant accountability so one noisy tenant can't drain the daily cap.
+
+---
+
 ## Known limits (out of scope)
 
 Pulled from `presearch.md → §3.5 Out of scope` — explicitly cut for this prototype:
