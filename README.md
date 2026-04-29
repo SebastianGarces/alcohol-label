@@ -111,7 +111,7 @@ Sentry org/project/auth-token are pulled by the Sentry build plugin from `.env.s
 
 ## Operations
 
-- **OpenRouter activity dashboard:** filtered by the `alcohol-label` API key (`X-Title: TTB Label Verifier`). Per-request cost, latency, model, and finish reason all visible. Aggregate over the past month: **$1.78 spend / 252 requests / 741K tokens** — split between Claude Sonnet 4.5 ($1.20, 130 req) and Claude Haiku 4.5 ($0.58, 122 req) with every request flowing through Anthropic and finishing as `tool_calls` (structured tool-use working as designed).
+- **OpenRouter activity dashboard:** filtered by the `alcohol-label` API key (`X-Title: TTB Label Verifier`). Per-request cost, latency, model, and finish reason all visible. Aggregate over the past month: **$4.64 spend / 622 requests / 1.86M tokens** — split between Claude Sonnet 4.5 ($3.26, 314 req, 850K tok) and Claude Haiku 4.5 ($1.38, 308 req, 1.01M tok) with every request flowing through Anthropic and finishing as `tool_calls` (structured tool-use working as designed). Most of the recent volume is from two `bun run eval:compare` runs (~$1.34 each) that produce the committed `eval-results.md`.
   - Activity view: ![OpenRouter activity (1mo aggregate)](dev-docs/screenshots/openrouter-activity.png)
   - Logs view: ![OpenRouter logs (per-request)](dev-docs/screenshots/openrouter-logs.png)
 - **Sentry project:** `alcohol-label/alcohol-label` (org/project) — runtime errors with source-mapped traces. Configured via the Next.js Sentry wizard; build-time source map upload runs from Vercel.
