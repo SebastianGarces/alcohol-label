@@ -27,7 +27,7 @@
 | Tests | Vitest | latest |
 | Errors | Sentry | Next.js wizard latest |
 | Deploy | Vercel Hobby | — |
-| Storage | None (server) + IndexedDB (client batch resume) | — |
+| Storage | None (server) + IndexedDB (client cache for `explainRejection` results only) | — |
 
 **No: ESLint, Prettier, Playwright, Postgres, SQLite, OpenCV, dedicated OCR services.** Add only if a documented gap forces it.
 
@@ -64,7 +64,7 @@ lib/
   canonical/                  # canonical TTB texts (government warning)
   schema/                     # Zod schemas: Application, LabelExtract, etc.
   rate-limit/                 # in-memory IP rate limiter
-  storage/                    # IndexedDB wrapper (batch results)
+  storage/                    # IndexedDB wrapper (rejection-explanation cache)
 components/
   ui/                         # shadcn components
   result/                     # result-display components (FieldRow, WarningRedline, etc.)
@@ -77,7 +77,7 @@ public/
 
 - **Server Action for single-label flow.** `app/actions.ts → verifyLabel(formData)`. Returns `VerificationResult`.
 - **API route for batch unit work.** `/api/verify-one` accepts FormData (image + JSON application string). Client orchestrates 200-300 of these with concurrency 6.
-- **No DB.** Server is pure functions. Client persists batch state to IndexedDB.
+- **No DB.** Server is pure functions. Batch state is in-memory and lost on reload (intentional — see `APPROACH.md` §5; real resume would need image blob persistence). IndexedDB is used only to cache `explainRejection` results so the second click is instant.
 - **Module boundaries:**
   - `lib/vlm/` is the only module that imports the `openai` SDK (configured for OpenRouter)
   - `lib/match/` has no LLM dependencies (deterministic fuzzy match)
@@ -150,10 +150,11 @@ Government warning is special:
 
 ## Database Rules
 
-There is no database. Persistence is browser-only via IndexedDB:
+There is no database. The only browser persistence is an IndexedDB cache for the I7 "Explain rejection" feature:
 - DB name: `label-verifier`
-- Stores: `verifications` (single labels), `batches` (batch metadata), `batch-results` (per-row results)
-- Always wrap IndexedDB calls in try/catch with in-memory fallback.
+- Store: `explanations` (key: `${resultId}:${field}`, value: cached Sonnet plain-English rationale)
+- Always wrap IndexedDB calls in try/catch with in-memory fallback (Safari incognito, blocked storage, etc.)
+- Single-label and batch state are in-memory only — a reload starts fresh. A real batch resume would need image blob persistence; intentionally cut (see `APPROACH.md` §5).
 
 ## Security Rules
 

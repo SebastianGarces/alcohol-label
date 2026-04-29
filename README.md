@@ -53,9 +53,9 @@ bunx tsc --noEmit       # type check
 ```
 
 - **Single label** → React Server Action (`app/actions.ts → verifyLabel`)
-- **Batch** → client orchestrates `POST /api/verify-one` with concurrency 6, persists in IndexedDB
+- **Batch** → client orchestrates `POST /api/verify-one` with concurrency 6
 - **Verifier core** → field extraction (Haiku) + government warning extraction (Sonnet) run in `Promise.all`; deterministic matching ladder in `lib/match/`
-- **No database.** Server is pure functions; client persists batch state in IndexedDB
+- **No database.** Server is pure functions; batch state is in-memory. IndexedDB caches per-field rejection explanations (I7) so the second click on "Why did this fail?" is instant
 
 ---
 
@@ -67,7 +67,7 @@ bunx tsc --noEmit       # type check
 | Framework | Next.js 16 (App Router) | Server Actions + edge-friendly + zero-config Vercel deploy |
 | Language | TypeScript (strict) | Catches schema drift at build time |
 | UI | shadcn/ui + Tailwind v4 + base-ui | Accessible primitives, senior-friendly defaults |
-| Forms / validation | react-hook-form + Zod | One Zod schema → form, server, and IndexedDB |
+| Forms / validation | react-hook-form + Zod | One Zod schema → form, server, and validation boundaries |
 | LLM gateway | OpenRouter (via `openai` SDK) | User has credits + abstracts model swaps |
 | Models | Anthropic Claude Haiku 4.5 (extract) + Sonnet 4.5 (warning + escalation) | Tiered routing: cheap-fast first, accurate second |
 | Image | sharp (rotate → resize 1568 → JPEG q85) | Strips EXIF, fixes orientation, sends a small JPEG |
@@ -127,7 +127,7 @@ Pulled from `presearch.md → §3.5 Out of scope` — explicitly cut for this pr
 - Multi-image submissions (front/back/side panels): single image only
 - COLA / TTB Online integration: no real applications fetched
 - PDF export of results: CSV only for batch
-- Persistent server-side history: no database; batch state is browser-local in IndexedDB
+- Persistent batch history: batch state is in-memory and lost on reload. A real resume feature would need image blob storage (browser blob persistence or server-side); cut as out-of-scope — see `APPROACH.md` §5 for the rationale
 - Multi-tenant auth, RBAC, audit trail: out of scope for a prototype
 - Languages other than English on labels (foreign-import details would need extra prompts)
 - True OCR fallback: VLM-only — if the model can't read the label, the user is told to retry with a clearer photo
@@ -150,7 +150,7 @@ lib/
   canonical/             # canonical TTB government warning text
   schema/                # Zod schemas (Application, LabelExtract, Result, Batch)
   rate-limit/            # in-memory IP rate limiter
-  storage/               # IndexedDB wrapper (batch resume)
+  storage/               # IndexedDB wrapper (rejection-explanation cache)
   batch/                 # CSV parse + queue runner + keyboard nav helpers
 public/samples/          # 5 demo labels + samples.json manifest
 dev-docs/                # original brief + research notes

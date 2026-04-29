@@ -26,7 +26,7 @@ This drove three concrete habits:
 | OpenRouter via `openai` SDK | Direct Anthropic SDK | User had OpenRouter credits; one SDK + one model registry (`lib/vlm/models.ts`) means swapping Haiku↔Flash is a one-line change |
 | Anthropic Claude (Haiku 4.5 + Sonnet 4.5) | Gemini 2.5 Flash | Gemini is ~3× cheaper input, but the gap is meaningless at take-home scale; Haiku 4.5 wins on stylized-font reading in informal tests; provider-pinned through OpenRouter to avoid silent reroutes |
 | VLM-only (no dedicated OCR) | Google Vision / Textract / PaddleOCR | A modern VLM is OCR + reasoning in one call; OCR services tie on stylized alcohol-label fonts and add latency |
-| No database, IndexedDB for batch | Neon Postgres / SQLite | Brief explicitly says no persistence required; reviewer wants it to "just work"; IndexedDB resumes across reloads |
+| No database; server is stateless; IndexedDB only for the I7 explanation cache | Neon Postgres / SQLite | Brief explicitly says no persistence required; the batch is client-orchestrated in-memory and the 24-label demo button reseeds it in one click |
 | sharp pipeline (rotate → 1568px → JPEG q85) | Cloudinary / serverless image API | Anthropic's recommended max edge is 1568px; sharp also strips EXIF (security) and fixes orientation (Jenny's "weird angles" complaint) |
 | Server-side rate limit (in-memory per-IP) | Upstash / Redis | No infra to provision; per-instance counters are fine for prototype scale |
 | Biome + Vitest | ESLint + Prettier + Jest | Single tool for lint+format with zero config drift; Vitest is faster and matches Bun's defaults |
@@ -155,6 +155,7 @@ This stops the verifier from over-flagging wine/beer labels that legally omit AB
 | True OCR fallback | VLM-only; if the model can't read the label, the user is told to retry with a clearer photo |
 | Synthetic data generator | Invisible to the reviewer; not worth take-home time |
 | I5 streaming progressive results, I1 confidence-bbox heatmap | Phase 6 stretch; deferred — see §7 |
+| IndexedDB batch resume (originally planned in PRD Phase 5) | Half-broken without image blob persistence: a reload loses the in-memory `File` objects, so "resume" would force the user to re-upload every image — that defeats the entire point. A correct resume needs blob storage (IndexedDB blobs or server-side), which is out of scope for a stateless prototype. The 24-label demo seed button is the actual evaluation path; a real batch run that needs reliability would belong on a queue worker with persistent storage, not in the browser. |
 
 The full out-of-scope list is in `presearch.md → §3.5`.
 
@@ -184,7 +185,7 @@ This is the table from `presearch.md → Loop 5`, with what was actually shipped
 | I2 | Smart-match transparency — `method: normalized` badge with tooltip | `components/result/FieldRow.tsx`, `lib/match/field.ts` | Dave: "STONE'S THROW ≡ Stone's Throw" |
 | I3 | EXIF auto-rotate via sharp | `lib/vlm/image.ts` | Jenny: "weird angles" |
 | I4 | Government warning red-line view (`<ins>`/`<del>`) | `components/result/WarningRedline.tsx`, `lib/match/warning.ts` | Jenny: "title-case warning header" |
-| I6 | Batch upload with live progress + IndexedDB resume | `components/batch/*`, `lib/batch/*`, `lib/storage/batches.ts` | Janet: Seattle batch case, "for years" |
+| I6 | Batch upload with live progress, concurrency-6 queue, sortable + filterable results, CSV export, retry-failed, one-click 24-label demo seed | `components/batch/*`, `lib/batch/*` | Janet: Seattle batch case, "for years" |
 | I7 | One-click "Explain this rejection" (Sonnet) | `components/result/ExplainRejection.tsx`, `lib/vlm/explain.ts` | Dave: "judgment, not just matching" |
 | I8 | Demo-mode sample labels (5 pre-loaded, SVG-rendered deterministically) | `public/samples/`, `scripts/generate-samples.ts`, `app/page.tsx` | Friction-free evaluation |
 | I11 | Tiered model routing — Haiku → Sonnet escalation; visible badge + tooltip + summary note | `lib/verifier/index.ts`, `lib/vlm/escalate.ts`, `components/result/FieldRow.tsx`, `components/result/TieredRoutingNote.tsx` | Cost+latency optimization that's also visible |
@@ -208,7 +209,7 @@ Pulled from the brief; explicit acknowledgement that the prototype answers them 
 - **Sarah Chen** (Deputy Director) wanted throughput. Batch mode at `/batch` runs 200–300 labels with concurrency 6 + per-row progress + CSV export.
 - **Dave Morrison** (28-year veteran) wanted UI that doesn't fight him and judgment, not just matching. The "STONE'S THROW vs Stone's Throw" sample is the second card on the landing page; the smart-match badge tells him *why* it matched; the "Explain this rejection" button gives him a one-paragraph human-readable reason. Tailwind base is 18px and every interactive target is ≥48px.
 - **Jenny Park** (8 months in) wanted the warning verification to be airtight and the photos from her phone to "just work." The warning is exact-match against canonical text with a side-by-side red-line on failure. sharp's `.rotate()` handles the EXIF orientation flag from her sideways phone shots.
-- **Janet (Seattle)** wanted the batch case "for years." It's at `/batch`, drag-drop or click for ZIP/folder + CSV, with IndexedDB resume across reloads if her browser crashes.
+- **Janet (Seattle)** wanted the batch case "for years." It's at `/batch`: drag-drop a folder of images + a CSV (or click "Load demo batch (24 labels)" to seed instantly), watch live progress with concurrency 6, sort and filter results by status, expand any row for the full per-field detail, export to CSV, and one-click retry of failed rows. Keyboard nav (`j`/`k`/space/`?`) keeps a queue reviewer's hands on the keys.
 
 ---
 
