@@ -44,16 +44,19 @@ Full ADR-by-ADR rationale is in `presearch.md` (13 ADRs).
 
 ## 3. AI strategy — tiered routing rationale
 
-Every label produces between two and three LLM calls, and I chose the model for each one deliberately.
+Every label produces between two and three LLM calls, and I chose the model for each one deliberately. The split was settled by the eval harness, not by intuition — see §10 for the data behind the warning-on-Haiku decision.
 
 ```
                          ┌─── Haiku 4.5: extract all fields  ──────┐
    Server Action / API ──┤                                          ├──> verify + match
-                         └─── Sonnet 4.5: extract gov. warning  ───┘     (deterministic)
+                         └─── Haiku 4.5: extract gov. warning  ────┘     (deterministic)
 
    For each field with confidence < 0.7:
        ─────────────────> Sonnet 4.5: re-extract that single field
                           (merged into result; field marked `escalated=true`)
+
+   For each field with Jaro-Winkler 0.85–0.95 vs application:
+       ─────────────────> Sonnet 4.5: tiebreak (same / different)
 
    Optional, on user request:
        ─────────────────> Sonnet 4.5: explain a specific rejection
@@ -61,10 +64,10 @@ Every label produces between two and three LLM calls, and I chose the model for 
 
 **Why this split:**
 
-- **Haiku 4.5 for the bulk read.** It's fast (~1.5–2.5s), cheap, and accurate enough for clean labels. Returning structured JSON via OpenAI-style tool-use is reliable when the schema is small.
-- **Sonnet 4.5 for the warning.** The government warning is the highest-stakes output — a single wrong character is a real-world FAIL. Sonnet's better at faithful long-text transcription including the structural flags (`headerIsAllCaps`, `headerAppearsBold`).
-- **Parallel calls.** Field-extract and warning-extract share no state, so they run in `Promise.all`. That's the difference between ~4s and ~7s end-to-end.
-- **Per-field escalation, not whole-label.** If one of nine fields comes back at 0.5 confidence, only that one field is re-extracted. The user sees a `Reviewed by Sonnet` badge with a tooltip, and a `TieredRoutingNote` summarizes the strategy on every result — the routing is *visible*, not magic.
+- **Haiku 4.5 for the bulk read AND the warning.** Original design used Sonnet for warning extraction on the theory that "highest-stakes output deserves the bigger model." The 41-case eval falsified that: Sonnet on warning landed Tiered's p95 at 7.2s — over the <5s SLO from the brief — for a single hard-tilt case that no model handles cleanly. Haiku reads the warning text + structural flags (`headerIsAllCaps`, `headerAppearsBold`) byte-equal to Sonnet on every clean and batch case, and at 44% lower total cost. The verifier is exact-match against canonical TTB text downstream, so model interpretation isn't load-bearing — what matters is faithful transcription, which Haiku does.
+- **Parallel calls.** Field-extract and warning-extract share no state, so they run in `Promise.all`. With both calls on Haiku that's ~3s p50 end-to-end vs ~4-5s when warning was on Sonnet.
+- **Per-field escalation, not whole-label.** If one of nine fields comes back at 0.5 confidence, only that one field is re-extracted by Sonnet. The user sees a `Reviewed by Sonnet` badge with a tooltip, and a `TieredRoutingNote` summarizes the strategy on every result — the routing is *visible*, not magic.
+- **Sonnet on the JW 0.85-0.95 tiebreak.** A Haiku call to decide whether two strings denote the same field could be self-confirming (Haiku already extracted the value); Sonnet adds independent judgment on the close-but-not-quite cases where it actually matters.
 - **Sonnet for the human-readable rejection.** When a reviewer clicks "Why did this fail?", that's a Sonnet call producing one short paragraph. Worth the cost; not on the hot path.
 
 **Reliability disciplines, all enforced in `lib/vlm/`:**
@@ -237,10 +240,10 @@ Pulled from the brief; explicit acknowledgement that the prototype answers them 
 
 ## 10. If I had another day
 
-The eval harness (I15) shipped, so the regression-catch-for-prompt-drift item is done; the in-product telemetry footer (I14) shipped, so the latency-visibility item is done. What's left is production-readiness, in priority order:
+The eval harness (I15) shipped, so the regression-catch-for-prompt-drift item is done. The in-product telemetry footer (I14) shipped, so the latency-visibility item is done. The warning-on-Haiku flip shipped this iteration: Tiered's p95 is now 4.2s (was 7.2s with Sonnet on warning), under the <5s SLO from the brief, at 56% of the prior cost. The remaining gap is concentrated in the hard-conditions set, which sets the production roadmap:
 
-1. **Land Tiered's p95 back under the 5s SLO.** The eval surfaced Tiered's p95 at 6.7s on the 41-case set — over the SLO, while Haiku-only sits at 4.4s. Sonnet's warning sub-call is the obvious candidate to demote: Haiku-only is 92.7% vs Tiered's 97.6% (a 2-case gap, all in the hard-conditions set), so a focused warning-only eval on Haiku is the gate. If Haiku reads the warning verbatim with the structural flags (`headerIsAllCaps`, `headerAppearsBold`) intact, flip `lib/vlm/models.ts` and the SLO is back. If it doesn't, the fallback is per-route Sonnet only on warnings whose Haiku confidence is low.
-2. **Promote diacritic + category-swap UX.** The single Tiered miss on `10-velvet-crow-tequila.jpg` is a VLM occasionally dropping a combining mark on `Destilería`. The verifier's REVIEW outcome is product-correct (the label *might* be wrong; the human should look), but in production this case wants a one-line "diacritic mismatch" explainer surfaced at the row level so the agent doesn't have to read the diff to understand it.
+1. **Confidence-gated warning escalation Haiku → Sonnet.** The 2 hard-tilt failures (`03-wildflower-tilt-12`, `12-sundown-tilt-25`) are warning-text wording misses where Haiku reads the body under heavy distortion. The fix mirrors the per-field escalation pattern already in `lib/vlm/escalate.ts`: when `extractWarning` returns `confidence < 0.7`, re-read with Sonnet, mark the result `escalated=true`, and surface a `Reviewed by Sonnet` badge on the warning panel. Adds ~5% Sonnet usage (only the low-confidence cases) — keeps the SLO on the happy path while restoring 12/12 hard-set accuracy. This is the right next change in `lib/vlm/warning.ts`; eval gates the verification.
+2. **Promote diacritic UX.** The Tiered miss on `10-velvet-crow-tequila.jpg` is a VLM occasionally dropping a combining mark on `Destilería`. The REVIEW outcome is product-correct (the label *might* be wrong; the human should look), but the row needs a one-line "diacritic mismatch" explainer so the agent doesn't have to read the diff to understand it.
 3. **Span-level tracing via Langfuse / Helicone / Braintrust.** OpenRouter's dashboard shows *what* happened per-call but not *why* — span-level tracing on extract / warning / escalate / tiebreak with `escalated=true` tags would make production debugging a five-minute job instead of a one-hour one. README has the production-roadmap rationale for not wiring it for the prototype.
-4. **Cron-driven golden-set eval.** `bun run eval:compare` nightly on main, deltas to Slack, model upgrades gated on no-accuracy-regression. Closest thing to "CI for the AI."
-5. **I5 streaming.** Render fields progressively as Haiku and Sonnet calls return. Perceived-latency win without changing the verifier — pure-frontend work and the next thing I'd touch if priority shifted from production-hardening to UX polish.
+4. **Cron-driven golden-set eval.** `bun run eval:compare` nightly on main, deltas to Slack, model upgrades gated on no-accuracy-regression. Closest thing to "CI for the AI." After (1) lands, the eval should also assert `routerEscalations.warning` count to catch silent regressions where Haiku's confidence calibration drifts.
+5. **I5 streaming.** Render fields progressively as Haiku calls return. Perceived-latency win without changing the verifier — pure-frontend work and the next thing I'd touch if priority shifted from production-hardening to UX polish.

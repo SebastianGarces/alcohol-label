@@ -89,7 +89,7 @@ public/
 
 - **All LLM traffic goes through OpenRouter.** Use the `openai` SDK with `baseURL: 'https://openrouter.ai/api/v1'` and `apiKey: process.env.OPENROUTER_API_KEY`. Recommended optional headers: `HTTP-Referer` (your deploy URL) and `X-Title: 'TTB Label Verifier'` so the OpenRouter dashboard tags requests.
 - **Primary VLM: Claude Haiku 4.5** via OpenRouter slug (likely `anthropic/claude-haiku-4.5` — confirm at runtime against OpenRouter's `/models` endpoint). All field extraction.
-- **Verification VLM: Claude Sonnet 4.5** via OpenRouter (likely `anthropic/claude-sonnet-4.5`). Used for: (a) government warning sub-call, (b) low-confidence single-field escalation, (c) Jaro-Winkler tiebreak.
+- **Verification VLM: Claude Sonnet 4.5** via OpenRouter (likely `anthropic/claude-sonnet-4.5`). Used for: (a) low-confidence single-field escalation, (b) Jaro-Winkler tiebreak, (c) human-readable rejection explanation. The government warning sub-call also defaults to Haiku since 2026-04-30 — see `lib/vlm/warning.ts` for the eval-driven rationale.
 - **Centralize model slugs in one place** (`lib/vlm/models.ts`) so swapping (Sonnet ↔ Opus, Haiku ↔ Flash) is a one-line change. OpenRouter's value is the abstraction — preserve it.
 - **Routing rule:** if any extracted field has confidence <0.7, re-extract that one field via Sonnet; merge result; mark `escalated=true` on that field.
 - **Parallel calls.** Field-extract Haiku call and warning Sonnet call run concurrently via `Promise.all` — they share no state.

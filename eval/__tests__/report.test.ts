@@ -89,7 +89,9 @@ describe("eval > report", () => {
     expect(md).toContain("Generated: 2026-04-29T03:14:22Z");
     expect(md).toContain("Commit: abcdef1");
     expect(md).toContain("## Summary");
-    expect(md).toContain("**Tiered** (Haiku extract + Sonnet warning/escalate, default)");
+    expect(md).toContain(
+      "**Tiered** (Haiku extract + warning, Sonnet escalate/tiebreak — default)",
+    );
     expect(md).toContain("2/3 (66.7%)");
     expect(md).toContain("Per-field accuracy (Tiered mode)");
     expect(md).toContain("brandName | 3 | 3 | 100.0%");

@@ -45,9 +45,11 @@ function getCommitSha(explicit?: string): string {
 function modeLabel(mode: string): string {
   switch (mode) {
     case "tiered":
-      return "**Tiered** (Haiku extract + Sonnet warning/escalate, default)";
+      return "**Tiered** (Haiku extract + warning, Sonnet escalate/tiebreak — default)";
     case "haiku-only":
-      return "Haiku only";
+      return "Haiku only (no Sonnet escalate/tiebreak)";
+    case "sonnet-warning":
+      return "Sonnet warning (the pre-2026-04-30 Tiered)";
     case "sonnet-only":
       return "Sonnet only";
     default:
@@ -289,6 +291,8 @@ function humanMode(mode: string): string {
       return "Tiered mode";
     case "haiku-only":
       return "Haiku-only mode";
+    case "sonnet-warning":
+      return "Sonnet-warning mode";
     case "sonnet-only":
       return "Sonnet-only mode";
     default:

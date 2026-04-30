@@ -27,7 +27,15 @@ const PROMPT =
 export async function extractWarning(
   dataUrl: string,
   options: VlmCallOptions = {},
-  model: ModelSlug = MODELS.SONNET,
+  // Default to Haiku 4.5: the 41-case eval (2026-04-30) showed Tiered with
+  // Sonnet on the warning at 97.6% accuracy / p95 7.2s (over SLO), vs the
+  // same pipeline with Haiku on the warning at 95.1% / p95 4.5s — same single
+  // velvet-crow miss as Sonnet, plus one extra hard-tilt case that's inside
+  // the report's stated noise floor. Haiku is the right default to land the
+  // <5s p95 SLO from the brief; the next-iteration mitigation for the lost
+  // hard case is a confidence-gated escalation back to Sonnet (same pattern
+  // already used for low-confidence field extraction).
+  model: ModelSlug = MODELS.HAIKU,
 ): Promise<VlmCallResult<WarningExtract>> {
   const { completion, telemetry } = await callChatWithTelemetry(
     {

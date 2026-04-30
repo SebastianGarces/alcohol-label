@@ -1,16 +1,16 @@
 # Eval Results
 
-> Generated: 2026-04-30T14:24:48.176Z · Commit: 24d0744 · Run cost: $1.75
+> Generated: 2026-04-30T14:43:06.793Z · Commit: 62c4192 · Run cost: $1.24
 
 ## Summary
 
 | Mode | Verdict accuracy | p50 latency | p95 latency | Total cost | Cost/label |
 |---|---|---|---|---|---|
-| **Tiered** (Haiku extract + Sonnet warning/escalate, default) | 40/41 (97.6%) | 4.7s | 6.7s | $0.5897 | $0.0144 |
-| Haiku only | 38/41 (92.7%) | 3.5s | 4.4s | $0.3274 | $0.0080 |
-| Sonnet only | 37/41 (90.2%) | 6.0s | 7.0s | $0.8291 | $0.0202 |
+| **Tiered** (Haiku extract + warning, Sonnet escalate/tiebreak — default) | 38/41 (92.7%) | 3.5s | 4.2s | $0.3274 | $0.0080 |
+| Haiku only (no Sonnet escalate/tiebreak) | 39/41 (95.1%) | 3.4s | 3.9s | $0.3274 | $0.0080 |
+| Sonnet warning (the pre-2026-04-30 Tiered) | 40/41 (97.6%) | 4.4s | 5.3s | $0.5897 | $0.0144 |
 
-**Headline:** Tiered 97.6% accuracy / p95 6.7s vs Haiku-only 92.7% / p95 4.4s — Haiku-only runs at **56%** of Tiered's cost. Haiku-only meets the <5s p95 SLO; Tiered does not (6.7s).
+**Headline:** Tiered 92.7% accuracy / p95 4.2s vs Haiku-only 95.1% / p95 3.9s — Haiku-only runs at **100%** of Tiered's cost. Both modes meet the <5s p95 SLO.
 
 ## Per-field accuracy (Tiered mode)
 
@@ -33,27 +33,26 @@
 | File | Expected | Got | Notes |
 |---|---|---|---|
 | 10-velvet-crow-tequila.jpg | pass | review | verdict differs |
+| 03-wildflower-tilt-12.jpg | pass | fail | warning fail: wording |
+| 12-sundown-tilt-25.jpg | pass | fail | warning fail: wording |
 
 ## Mode-by-mode failures (compare runs)
 
-| File | Expected | Tiered mode | Haiku-only mode | Sonnet-only mode |
+| File | Expected | Tiered mode | Haiku-only mode | Sonnet-warning mode |
 | --- | --- | --- | --- | --- |
-| 02-black-pine-malt.jpg | pass | OK (pass) | OK (pass) | **fail** |
-| 09-old-anchor-rye.jpg | pass | OK (pass) | OK (pass) | **fail** |
-| 10-velvet-crow-tequila.jpg | pass | **review** | **review** | **fail** |
-| 02-black-pine-glare.jpg | pass | OK (pass) | OK (pass) | **fail** |
-| 03-wildflower-tilt-12.jpg | pass | OK (pass) | **fail** | OK (pass) |
-| 12-sundown-tilt-25.jpg | pass | OK (pass) | **fail** | OK (pass) |
+| 10-velvet-crow-tequila.jpg | pass | **review** | **review** | **review** |
+| 03-wildflower-tilt-12.jpg | pass | **fail** | **fail** | OK (pass) |
+| 12-sundown-tilt-25.jpg | pass | **fail** | OK (pass) | OK (pass) |
 
 ## Accuracy by case source
 
 > Hard-conditions are sharp-degraded labels (low-light, glare, tilt, blur, shear). Numbers there are an upper bound — see Limitations.
 
-| Source | Tiered mode | Haiku-only mode | Sonnet-only mode |
+| Source | Tiered mode | Haiku-only mode | Sonnet-warning mode |
 | --- | --- | --- | --- |
 | single | 5/5 (100.0%) | 5/5 (100.0%) | 5/5 (100.0%) |
-| batch | 23/24 (95.8%) | 23/24 (95.8%) | 21/24 (87.5%) |
-| hard (degraded) | 12/12 (100.0%) | 10/12 (83.3%) | 11/12 (91.7%) |
+| batch | 23/24 (95.8%) | 23/24 (95.8%) | 23/24 (95.8%) |
+| hard (degraded) | 10/12 (83.3%) | 11/12 (91.7%) | 12/12 (100.0%) |
 
 ## Limitations
 

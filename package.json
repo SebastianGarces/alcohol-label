@@ -12,7 +12,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "eval": "bun eval/index.ts --mode=tiered",
-    "eval:compare": "bun eval/index.ts --mode=tiered,haiku-only,sonnet-only",
+    "eval:compare": "bun eval/index.ts --mode=tiered,haiku-only,sonnet-warning",
     "eval:dry": "bun eval/index.ts --mode=tiered --dry-run"
   },
   "dependencies": {

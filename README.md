@@ -68,7 +68,7 @@ bunx tsc --noEmit       # type check
 | UI | shadcn/ui + Tailwind v4 + base-ui | Accessible primitives, senior-friendly defaults |
 | Forms / validation | react-hook-form + Zod | One Zod schema → form, server, and validation boundaries |
 | LLM gateway | OpenRouter (via `openai` SDK) | User has credits + abstracts model swaps |
-| Models | Anthropic Claude Haiku 4.5 (extract) + Sonnet 4.5 (warning + escalation) | Tiered routing: cheap-fast first, accurate second |
+| Models | Anthropic Claude Haiku 4.5 (field + warning extract) + Sonnet 4.5 (low-confidence escalate / JW tiebreak / explain) | Tiered routing settled by the eval harness — see `eval-results.md` |
 | Image | sharp (rotate → resize 1280 → JPEG q85) | Strips EXIF, fixes orientation, sends a small JPEG; 1280 keeps Tiered under the <5s p95 SLO |
 | Async state | @tanstack/react-query v5 | Single-call caching for the single-label flow |
 | CSV / diff | papaparse + diff | Batch CSV in/out + warning red-line view |
@@ -111,7 +111,7 @@ Sentry org/project/auth-token are pulled by the Sentry build plugin from `.env.s
 
 ## Operations
 
-- **OpenRouter activity dashboard:** filtered by the `alcohol-label` API key (`X-Title: TTB Label Verifier`). Per-request cost, latency, model, and finish reason all visible. Most of the volume is from `bun run eval:compare` runs (~$1.75 each across the 41-case set × 3 modes) that produce the committed `eval-results.md`. Per-key spend cap is set to $5/day in the OpenRouter dashboard. Screenshots below were captured from a snapshot of the dashboard; live numbers will have moved on.
+- **OpenRouter activity dashboard:** filtered by the `alcohol-label` API key (`X-Title: TTB Label Verifier`). Per-request cost, latency, model, and finish reason all visible. Most of the volume is from `bun run eval:compare` runs (~$1.24 each across the 41-case set × 3 modes since `sonnet-only` was dropped from the default) that produce the committed `eval-results.md`. Per-key spend cap is set to $5/day in the OpenRouter dashboard. Screenshots below were captured from a snapshot of the dashboard; live numbers will have moved on.
   - Activity view: ![OpenRouter activity (1mo aggregate)](dev-docs/screenshots/openrouter-activity.png)
   - Logs view: ![OpenRouter logs (per-request)](dev-docs/screenshots/openrouter-logs.png)
 - **Sentry project:** `alcohol-label/alcohol-label` (org/project) — runtime errors with source-mapped traces. Configured via the Next.js Sentry wizard; build-time source map upload runs from Vercel.
@@ -121,20 +121,26 @@ Sentry org/project/auth-token are pulled by the Sentry build plugin from `.env.s
 
 ## Evaluation
 
-Three execution modes (Tiered, Haiku-only, Sonnet-only), 41 golden samples (5 single + 24 batch + 12 hard-conditions), all calls go through real OpenRouter with `provider: { order: ['anthropic'], allow_fallbacks: false }` so model identity is pinned. Methodology, per-field accuracy, per-case verdict diffs, and accuracy split by case-source (single / batch / hard) are all committed in [`eval-results.md`](eval-results.md).
+The eval harness is the source of truth for the routing strategy — every model assignment in `lib/vlm/` is justified by a re-runnable comparison. 41 golden samples (5 single + 24 batch + 12 hard-conditions, all generated deterministically by `scripts/`); all calls go through real OpenRouter with `provider: { order: ['anthropic'], allow_fallbacks: false }` so model identity is pinned. Per-field accuracy, per-case verdict diffs, and accuracy split by case-source are committed in [`eval-results.md`](eval-results.md).
 
-| | **Tiered** (default) | Haiku-only | Sonnet-only |
+The default `bun run eval:compare` runs three modes:
+
+| | **Tiered** (default) | Haiku-only | Sonnet-warning (the prior default) |
 |---|---|---|---|
-| Verdict accuracy | 40/41 (97.6%) | 38/41 (92.7%) | 37/41 (90.2%) |
-| p50 latency | 4.7s | 3.5s | 6.0s |
-| p95 latency | 6.7s | 4.4s | 7.0s |
-| Cost per label | $0.0144 | $0.0080 | $0.0202 |
+| Verdict accuracy | 38/41 (92.7%) | 39/41 (95.1%) | 40/41 (97.6%) |
+| p50 latency | 3.5s | 3.4s | 4.4s |
+| p95 latency | **4.2s** ✅ | 3.9s ✅ | **5.3s** ❌ |
+| Cost per label | $0.0080 | $0.0080 | $0.0144 |
 
-Tiered routing **outperforms** all-Sonnet (97.6% vs 90.2%) at 71% of the cost — Sonnet's verbatim transcription is slightly more "interpretive" and fails the verifier's strict matching on stylized labels. **Haiku-only is the only mode that hits the <5s p95 SLO (4.4s)**: it's 5pp behind Tiered on accuracy (the hard-conditions set is where it slips, 10/12 vs Tiered's 12/12), but at 56% of the cost it's the right starting place for production once the warning sub-call has its own focused eval. Tiered's p95 (6.7s) is over the 5s SLO on this run — within the noise floor of a 41-case set, but a real argument for the latency-vs-accuracy tradeoff being deliberate, not handwaved.
+**Tiered hits the <5s p95 SLO at 56% of the prior cost** — the latency win is the headline. The previous default (Sonnet on the warning sub-call) was 5pp more accurate but **over** the SLO, and exclusively because of the synthetic hard-tilt cases where Haiku misreads the warning header under heavy distortion. On clean and real-batch labels (29 cases), all three modes are tied at 28/29; the comparison only diverges on the 12-case hard-conditions set (Tiered 10/12, Haiku-only 11/12, Sonnet-warning 12/12).
 
-The single Tiered miss is `10-velvet-crow-tequila.jpg`: an imported tequila with diacritics in the bottler name (`Destilería Velvet Crow`) and a separate "Imported by" block. The verifier returns REVIEW (not the expected PASS) because the VLM occasionally drops a combining mark — which is exactly what diacritic-aware normalization is designed to surface to a human, not silently pass.
+The 3 Tiered misses break down as:
+- `10-velvet-crow-tequila.jpg` — diacritic-fragile case where the VLM occasionally drops a combining mark on `Destilería`. REVIEW is product-correct; this case isn't a model-routing failure.
+- `03-wildflower-tilt-12.jpg`, `12-sundown-tilt-25.jpg` — warning text wording miss under 12° / 25° synthetic tilt. The natural production fix is a confidence-gated escalation: when Haiku's warning extraction returns `confidence < 0.7`, re-read with Sonnet (same pattern already used for low-confidence fields). See [`APPROACH.md` §10](APPROACH.md#10-if-i-had-another-day) for the rollout sketch.
 
-Total run cost across all three modes: **$1.75**. Re-run with:
+`sonnet-only` (Sonnet for everything) is no longer in the default compare set: the previous run showed it was *worse* than Tiered on accuracy *and* latency, so $0.83 to re-confirm that on every CI run isn't worth it. Available via `--mode=sonnet-only` for ad-hoc investigations.
+
+Total cost of the default 3-mode run: **$1.24**. Re-run with:
 
 ```bash
 bun run eval            # Tiered only
