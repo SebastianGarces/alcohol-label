@@ -1,6 +1,13 @@
+// NFKD decomposes characters into base + combining marks (e.g. "í" → "i" + ́),
+// then we strip the combining marks. This makes "Destilería" === "Destileria"
+// for matching purposes — important for foreign producer/address fields where
+// the application form may carry the accented form but the VLM extracts ASCII.
+function stripDiacritics(input: string): string {
+  return input.normalize("NFKD").replace(/\p{Diacritic}/gu, "");
+}
+
 export function normalizeBasic(input: string): string {
-  return input
-    .normalize("NFKC")
+  return stripDiacritics(input)
     .replace(/[‘’ʼ]/g, "'")
     .replace(/[“”]/g, '"')
     .replace(/\s+/g, " ")
@@ -41,8 +48,7 @@ export function parseNetContents(
 }
 
 export function normalizeAddress(input: string): string {
-  return input
-    .normalize("NFKC")
+  return stripDiacritics(input)
     .replace(/[\n\r,;]+/g, " ")
     .replace(/\bst\b\.?/gi, "street")
     .replace(/\brd\b\.?/gi, "road")

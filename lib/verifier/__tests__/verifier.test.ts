@@ -62,8 +62,8 @@ const preparedFor = (hash: string): PreparedImage => ({
   base64: "AA==",
   dataUrl: "data:image/jpeg;base64,AA==",
   hash,
-  width: 1568,
-  height: 1568,
+  width: 1280,
+  height: 1280,
   meanBrightness: 128,
   quality: {
     lowQuality: false,
@@ -112,6 +112,7 @@ describe("verifyLabel orchestrator", () => {
     expect(result.status).toBe("review");
     const brand = result.fields.find((f) => f.field === "brandName");
     expect(brand?.status).toBe("fuzzy_match");
+    expect(brand?.method).toBe("normalized");
   });
 
   it("title-case warning → FAIL with header_not_all_caps", async () => {

@@ -157,7 +157,7 @@ export function matchField(
         labelValue,
         labelConf,
         1,
-        "Match after case / whitespace / quote normalization",
+        "Match after case / whitespace / quote / diacritic normalization",
       ),
     };
   }

@@ -19,7 +19,7 @@ describe("matchField — strings", () => {
     }
   });
 
-  it("normalized match — case", () => {
+  it("normalized match — case (Dave's STONE'S THROW vs Stone's Throw → REVIEW)", () => {
     const o = matchField("brandName", "Stone's Throw", ext("STONE'S THROW"));
     if (o.status !== "resolved") throw new Error("expected resolved");
     expect(o.result.status).toBe("fuzzy_match");
@@ -36,6 +36,13 @@ describe("matchField — strings", () => {
     const o = matchField("brandName", "Stone’s Throw", ext("Stone's Throw"));
     if (o.status !== "resolved") throw new Error("expected resolved");
     expect(o.result.status).toBe("fuzzy_match");
+  });
+
+  it("normalized match — diacritics (foreign producer names)", () => {
+    const o = matchField("bottlerName", "Destilería Velvet Crow", ext("Destileria Velvet Crow"));
+    if (o.status !== "resolved") throw new Error("expected resolved");
+    expect(o.result.status).toBe("fuzzy_match");
+    expect(o.result.method).toBe("normalized");
   });
 
   it("classType exact match", () => {

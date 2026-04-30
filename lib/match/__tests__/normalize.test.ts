@@ -14,6 +14,10 @@ describe("normalizeBasic", () => {
   it("normalizes smart quotes to straight", () => {
     expect(normalizeBasic("Stone’s Throw")).toBe("stone's throw");
   });
+  it("strips diacritics so accented and ASCII forms compare equal", () => {
+    expect(normalizeBasic("Destilería Velvet Crow")).toBe("destileria velvet crow");
+    expect(normalizeBasic("Château Margaux")).toBe(normalizeBasic("Chateau Margaux"));
+  });
 });
 
 describe("parseAbv", () => {
@@ -36,5 +40,10 @@ describe("normalizeAddress + tokenSetRatio", () => {
     const a = normalizeAddress("123 Main St., Louisville, KY");
     const b = normalizeAddress("123 Main Street\nLouisville, KY");
     expect(tokenSetRatio(a, b)).toBe(1);
+  });
+  it("normalizes accented foreign addresses for ASCII comparisons", () => {
+    const a = normalizeAddress("Carretera Tequila-Magdalena Km 12, Jalisco, México");
+    const b = normalizeAddress("Carretera Tequila-Magdalena Km 12, Jalisco, Mexico");
+    expect(a).toBe(b);
   });
 });
