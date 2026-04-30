@@ -69,8 +69,8 @@ export function TelemetryFooter({ result }: { result: VerificationResult }) {
         <span className="sr-only">{open ? "Hide call breakdown" : "Show call breakdown"}</span>
       </button>
       {open ? (
-        <div id={detailsId} className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[28rem] text-left text-sm tabular-nums">
+        <div id={detailsId} className="mt-3">
+          <table className="w-full text-left text-sm tabular-nums">
             <thead>
               <tr className="text-pencil">
                 <th className="py-1 pr-3 font-medium">Call</th>
