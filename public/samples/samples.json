@@ -69,5 +69,50 @@
       "bottlerName": "Stone's Throw Distillery",
       "bottlerAddress": "123 Main Street, Louisville, KY"
     }
+  },
+  {
+    "filename": "06-blackwood-front-only.png",
+    "label": "Script-font front label (warning on back, not submitted)",
+    "expectedStatus": "fail",
+    "expectedFailures": ["missing"],
+    "applicationData": {
+      "beverageType": "distilled_spirits",
+      "brandName": "Blackwood Reserve",
+      "classType": "Kentucky Straight Bourbon Whiskey",
+      "alcoholContent": "43%",
+      "netContents": "750 mL",
+      "bottlerName": "Blackwood Distillery Co.",
+      "bottlerAddress": "412 River Road, Frankfort, KY"
+    }
+  },
+  {
+    "filename": "07-cooper-back-label.png",
+    "label": "Back-only label, application claims 'Rye Whiskey' but label only says 'rye' in prose",
+    "expectedStatus": "fail",
+    "applicationData": {
+      "beverageType": "distilled_spirits",
+      "brandName": "Cooper & Sons",
+      "classType": "Rye Whiskey",
+      "alcoholContent": "50%",
+      "netContents": "750 mL",
+      "bottlerName": "Cooper & Sons Distillery",
+      "bottlerAddress": "88 Mill Street, Kingston, NY"
+    }
+  },
+  {
+    "filename": "08-chateau-marchand-front.png",
+    "label": "French import wine, diacritic brand (warning on back, not submitted)",
+    "expectedStatus": "fail",
+    "expectedFailures": ["missing"],
+    "applicationData": {
+      "beverageType": "wine",
+      "brandName": "Château Marchand",
+      "classType": "Red Wine",
+      "alcoholContent": "13.5%",
+      "netContents": "750 mL",
+      "importerName": "Atlantic Wine Merchants",
+      "importerAddress": "200 Harbor Drive, Boston, MA",
+      "countryOfOrigin": "France"
+    }
   }
 ]

@@ -4,10 +4,10 @@ import { Application } from "@/lib/schema/application";
 import { loadCases } from "../cases";
 
 describe("eval > cases", () => {
-  it("loads 41 cases (5 single + 24 batch + 12 hard)", () => {
+  it("loads 44 cases (8 single + 24 batch + 12 hard)", () => {
     const cases = loadCases();
-    expect(cases).toHaveLength(41);
-    expect(cases.filter((c) => c.source === "single")).toHaveLength(5);
+    expect(cases).toHaveLength(44);
+    expect(cases.filter((c) => c.source === "single")).toHaveLength(8);
     expect(cases.filter((c) => c.source === "batch")).toHaveLength(24);
     expect(cases.filter((c) => c.source === "hard")).toHaveLength(12);
   });

@@ -111,7 +111,7 @@ Sentry org/project/auth-token are pulled by the Sentry build plugin from `.env.s
 
 ## Operations
 
-- **OpenRouter activity dashboard:** filtered by the `alcohol-label` API key (`X-Title: TTB Label Verifier`). Per-request cost, latency, model, and finish reason all visible. Most of the volume is from `bun run eval:compare` runs (~$1.24 each across the 41-case set × 3 modes since `sonnet-only` was dropped from the default) that produce the committed `eval-results.md`. Per-key spend cap is set to $5/day in the OpenRouter dashboard. Screenshots below were captured from a snapshot of the dashboard; live numbers will have moved on.
+- **OpenRouter activity dashboard:** filtered by the `alcohol-label` API key (`X-Title: TTB Label Verifier`). Per-request cost, latency, model, and finish reason all visible. Most of the volume is from `bun run eval:compare` runs (~$1.34 each across the 44-case set × 3 modes since `sonnet-only` was dropped from the default) that produce the committed `eval-results.md`. Per-key spend cap is set to $5/day in the OpenRouter dashboard. Screenshots below were captured from a snapshot of the dashboard; live numbers will have moved on.
   - Activity view: ![OpenRouter activity (1mo aggregate)](dev-docs/screenshots/openrouter-activity.png)
   - Logs view: ![OpenRouter logs (per-request)](dev-docs/screenshots/openrouter-logs.png)
 - **Sentry project:** `alcohol-label/alcohol-label` (org/project) — runtime errors with source-mapped traces. Configured via the Next.js Sentry wizard; build-time source map upload runs from Vercel.
@@ -121,18 +121,18 @@ Sentry org/project/auth-token are pulled by the Sentry build plugin from `.env.s
 
 ## Evaluation
 
-The eval harness is the source of truth for the routing strategy — every model assignment in `lib/vlm/` is justified by a re-runnable comparison. 41 golden samples (5 single + 24 batch + 12 hard-conditions, all generated deterministically by `scripts/`); all calls go through real OpenRouter with `provider: { order: ['anthropic'], allow_fallbacks: false }` so model identity is pinned. Per-field accuracy, per-case verdict diffs, and accuracy split by case-source are committed in [`eval-results.md`](eval-results.md).
+The eval harness is the source of truth for the routing strategy — every model assignment in `lib/vlm/` is justified by a re-runnable comparison. 44 golden samples (8 single + 24 batch + 12 hard-conditions; the single set includes 3 ChatGPT-generated labels that probe script-font typography, dense back-label prose, and a French diacritic-bearing import — gaps the deterministic batch/hard generators don't cover); all calls go through real OpenRouter with `provider: { order: ['anthropic'], allow_fallbacks: false }` so model identity is pinned. Per-field accuracy, per-case verdict diffs, and accuracy split by case-source are committed in [`eval-results.md`](eval-results.md).
 
 The default `bun run eval:compare` runs three modes:
 
 | | **Tiered** (default) | Haiku-only | Sonnet-warning (the prior default) |
 |---|---|---|---|
-| Verdict accuracy | 38/41 (92.7%) | 39/41 (95.1%) | 40/41 (97.6%) |
-| p50 latency | 3.5s | 3.4s | 4.4s |
-| p95 latency | **4.2s** ✅ | 3.9s ✅ | **5.3s** ❌ |
-| Cost per label | $0.0080 | $0.0080 | $0.0144 |
+| Verdict accuracy | 41/44 (93.2%) | 42/44 (95.5%) | 43/44 (97.7%) |
+| p50 latency | 3.2s | 3.1s | 3.9s |
+| p95 latency | **5.0s** ✅ | 4.8s ✅ | **6.1s** ❌ |
+| Cost per label | $0.0081 | $0.0080 | $0.0145 |
 
-**Tiered hits the <5s p95 SLO at 56% of the prior cost** — the latency win is the headline. The previous default (Sonnet on the warning sub-call) was 5pp more accurate but **over** the SLO, and exclusively because of the synthetic hard-tilt cases where Haiku misreads the warning header under heavy distortion. On clean and real-batch labels (29 cases), all three modes are tied at 28/29; the comparison only diverges on the 12-case hard-conditions set (Tiered 10/12, Haiku-only 11/12, Sonnet-warning 12/12).
+**Tiered hits the <5s p95 SLO at 56% of the prior cost** — the latency win is the headline. The previous default (Sonnet on the warning sub-call) was 4.5pp more accurate but **over** the SLO, and exclusively because of the synthetic hard-tilt cases where Haiku misreads the warning header under heavy distortion. On clean and real-batch labels (32 cases), all three modes are tied at 31/32; the comparison only diverges on the 12-case hard-conditions set (Tiered 10/12, Haiku-only 11/12, Sonnet-warning 12/12). p95 latency is run-to-run variant by ±0.4s — observed range 4.2–5.0s for Tiered across recent runs.
 
 The 3 Tiered misses break down as:
 - `10-velvet-crow-tequila.jpg` — diacritic-fragile case where the VLM occasionally drops a combining mark on `Destilería`. REVIEW is product-correct; this case isn't a model-routing failure.
@@ -140,7 +140,7 @@ The 3 Tiered misses break down as:
 
 `sonnet-only` (Sonnet for everything) is no longer in the default compare set: the previous run showed it was *worse* than Tiered on accuracy *and* latency, so $0.83 to re-confirm that on every CI run isn't worth it. Available via `--mode=sonnet-only` for ad-hoc investigations.
 
-Total cost of the default 3-mode run: **$1.24**. Re-run with:
+Total cost of the default 3-mode run: **$1.34**. Re-run with:
 
 ```bash
 bun run eval            # Tiered only
