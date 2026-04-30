@@ -3,7 +3,7 @@ import type { OverallStatus, VerificationResult } from "@/lib/schema/result";
 
 export type EvalCase = {
   id: string;
-  source: "single" | "batch";
+  source: "single" | "batch" | "hard";
   imagePath: string;
   application: Application;
   expectedStatus: OverallStatus;

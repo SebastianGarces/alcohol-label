@@ -1,0 +1,139 @@
+{
+  "generatedAt": "2026-04-29T19:00:47.928Z",
+  "rows": [
+    {
+      "filename": "01-stones-throw-low-light.jpg",
+      "brand": "Stone's Throw",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "02-black-pine-glare.jpg",
+      "brand": "Black Pine",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "03-wildflower-tilt-12.jpg",
+      "brand": "Wildflower Reserve",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "04-copperhead-blur.jpg",
+      "brand": "Copperhead",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "05-iron-crown-glare-brand.jpg",
+      "brand": "Iron Crown",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "06-old-anchor-tilt+blur.jpg",
+      "brand": "Old Anchor",
+      "beverageType": "distilled_spirits",
+      "expected": "pass"
+    },
+    {
+      "filename": "07-hollow-oak-glare-warning.jpg",
+      "brand": "Hollow Oak",
+      "beverageType": "wine",
+      "expected": "pass"
+    },
+    {
+      "filename": "08-cedar-hill-perspective.jpg",
+      "brand": "Cedar Hill",
+      "beverageType": "wine",
+      "expected": "pass"
+    },
+    {
+      "filename": "09-stargazer-low-light.jpg",
+      "brand": "Stargazer",
+      "beverageType": "wine",
+      "expected": "pass"
+    },
+    {
+      "filename": "10-north-pier-glare-half.jpg",
+      "brand": "North Pier",
+      "beverageType": "malt_beverage",
+      "expected": "pass"
+    },
+    {
+      "filename": "11-tall-oak-blur+lowlight.jpg",
+      "brand": "Tall Oak",
+      "beverageType": "malt_beverage",
+      "expected": "pass"
+    },
+    {
+      "filename": "12-sundown-tilt-25.jpg",
+      "brand": "Sundown",
+      "beverageType": "malt_beverage",
+      "expected": "pass"
+    }
+  ],
+  "notes": [
+    {
+      "filename": "01-stones-throw-low-light.jpg",
+      "source": "01-stones-throw-bourbon.jpg",
+      "note": "dim warehouse lighting"
+    },
+    {
+      "filename": "02-black-pine-glare.jpg",
+      "source": "02-black-pine-malt.jpg",
+      "note": "glare across upper-right brand area"
+    },
+    {
+      "filename": "03-wildflower-tilt-12.jpg",
+      "source": "03-wildflower-vodka.jpg",
+      "note": "12° tilt (handheld phone)"
+    },
+    {
+      "filename": "04-copperhead-blur.jpg",
+      "source": "04-copperhead-tn-whiskey.jpg",
+      "note": "mild motion blur"
+    },
+    {
+      "filename": "05-iron-crown-glare-brand.jpg",
+      "source": "05-iron-crown-gin.jpg",
+      "note": "heavy glare on brand — verifier reads through it correctly"
+    },
+    {
+      "filename": "06-old-anchor-tilt+blur.jpg",
+      "source": "09-old-anchor-rye.jpg",
+      "note": "tilt + slight blur (handheld + low shutter)"
+    },
+    {
+      "filename": "07-hollow-oak-glare-warning.jpg",
+      "source": "11-hollow-oak-cab.jpg",
+      "note": "glare on warning text — verifier still extracts canonical text + formatting flags"
+    },
+    {
+      "filename": "08-cedar-hill-perspective.jpg",
+      "source": "12-cedar-hill-pinot.jpg",
+      "note": "off-axis photo (shear)"
+    },
+    {
+      "filename": "09-stargazer-low-light.jpg",
+      "source": "18-stargazer-riesling.jpg",
+      "note": "ambient bar lighting"
+    },
+    {
+      "filename": "10-north-pier-glare-half.jpg",
+      "source": "19-north-pier-ipa.jpg",
+      "note": "broad glare on left half of can"
+    },
+    {
+      "filename": "11-tall-oak-blur+lowlight.jpg",
+      "source": "20-tall-oak-pilsner.jpg",
+      "note": "low shutter + dim lighting"
+    },
+    {
+      "filename": "12-sundown-tilt-25.jpg",
+      "source": "21-sundown-stout.jpg",
+      "note": "25° tilt (camera held sideways-ish)"
+    }
+  ]
+}

@@ -37,6 +37,10 @@ function percentile(sorted: number[], p: number): number {
 }
 
 function summarizeFieldAccuracy(results: EvalCaseResult[]): PerFieldAccuracy {
+  // Score "did the verifier produce the expected outcome for this field" rather
+  // than "did the field match the label". For cases the manifest expects to
+  // FAIL, a `mismatch` or `missing` status is the correct outcome; counting it
+  // as wrong would punish the verifier for catching the bugs the fixtures plant.
   const out: PerFieldAccuracy = {};
   for (const key of FieldKeyEnum.options) {
     let correct = 0;
@@ -46,7 +50,16 @@ function summarizeFieldAccuracy(results: EvalCaseResult[]): PerFieldAccuracy {
       const f = r.fields.find((x) => x.field === key);
       if (!f) continue;
       total += 1;
-      if (FIELD_CORRECT_STATUSES.has(f.status)) correct += 1;
+      const matchedLabel = FIELD_CORRECT_STATUSES.has(f.status);
+      if (r.expected === "fail") {
+        // For expected-fail cases, *any* deterministic outcome is a "correct
+        // measurement" — the field metric isn't the right tool to grade the
+        // failure path. We only flag a true verifier failure (e.g. a crash)
+        // by counting on whether the per-case verdict landed.
+        if (r.correct) correct += 1;
+      } else if (matchedLabel) {
+        correct += 1;
+      }
     }
     if (total > 0) out[key] = { correct, total };
   }

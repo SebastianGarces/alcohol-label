@@ -1,0 +1,13 @@
+filename,beverageType,brandName,classType,alcoholContent,netContents,bottlerName,bottlerAddress,importerName,importerAddress,countryOfOrigin
+01-stones-throw-low-light.jpg,distilled_spirits,Stone's Throw,Kentucky Straight Bourbon Whiskey,45%,750 mL,Stone's Throw Distillery,"123 Main Street, Louisville, KY",,,
+02-black-pine-glare.jpg,distilled_spirits,Black Pine,Single Malt Whiskey,43%,750 mL,Black Pine Spirits Co.,"44 Cedar Lane, Asheville, NC",,,
+03-wildflower-tilt-12.jpg,distilled_spirits,Wildflower Reserve,Vodka,40%,1 L,Wildflower Distilling Co.,"210 Prairie Road, Lawrence, KS",,,
+04-copperhead-blur.jpg,distilled_spirits,Copperhead,Tennessee Whiskey,47%,750 mL,Copperhead Distillery,"5 River Bend Drive, Lynchburg, TN",,,
+05-iron-crown-glare-brand.jpg,distilled_spirits,Iron Crown,London Dry Gin,41.5%,750 mL,Iron Crown Distillers,"9 Royal Street, Portland, OR",,,
+06-old-anchor-tilt+blur.jpg,distilled_spirits,Old Anchor,Straight Rye Whiskey,50%,750 mL,Old Anchor Distillery,"401 Wharf Street, Baltimore, MD",,,
+07-hollow-oak-glare-warning.jpg,wine,Hollow Oak,Cabernet Sauvignon,13.5%,750 mL,Hollow Oak Vineyards,"1450 Estate Road, Napa, CA",,,
+08-cedar-hill-perspective.jpg,wine,Cedar Hill,Pinot Noir,13.0%,750 mL,Cedar Hill Winery,"302 Vine Road, Willamette Valley, OR",,,
+09-stargazer-low-light.jpg,wine,Stargazer,Riesling,11.5%,750 mL,Stargazer Vineyards,"26 Lakeview Road, Finger Lakes, NY",,,
+10-north-pier-glare-half.jpg,malt_beverage,North Pier,India Pale Ale,6.8%,12 fl oz,North Pier Brewing Co.,"60 Harbor Drive, Portland, ME",,,
+11-tall-oak-blur+lowlight.jpg,malt_beverage,Tall Oak,Pilsner,5.0%,12 fl oz,Tall Oak Brewing Co.,"11 Industrial Way, Madison, WI",,,
+12-sundown-tilt-25.jpg,malt_beverage,Sundown,Imperial Stout,7.2%,12 fl oz,Sundown Brewing,"300 Mill Road, Burlington, VT",,,

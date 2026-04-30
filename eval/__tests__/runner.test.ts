@@ -128,6 +128,37 @@ describe("eval > runner", () => {
     }
   });
 
+  it("scores per-field metric on outcome, not on label-match (intentional fail-cases count as correct)", async () => {
+    const failCase = makeCase("c-abv-mismatch", "fail");
+    const verifyResult: VerificationResult = {
+      ...makeResult("fail"),
+      fields: [
+        {
+          field: "alcoholContent",
+          status: "mismatch",
+          method: "numeric",
+          applicationValue: "45%",
+          labelValue: "40%",
+          confidence: 0.99,
+          similarity: null,
+          rationale: "Application 45.0% vs label 40.0%",
+          escalated: false,
+        },
+      ],
+    };
+    const run = await runEval(
+      [failCase],
+      "test",
+      {},
+      {
+        concurrency: 1,
+        readImage: () => Buffer.from(""),
+        verify: async () => verifyResult,
+      },
+    );
+    expect(run.perFieldAccuracy.alcoholContent).toEqual({ correct: 1, total: 1 });
+  });
+
   it("handles per-case errors without crashing the run", async () => {
     const cases = [makeCase("ok", "pass"), makeCase("err", "pass")];
     let callIdx = 0;

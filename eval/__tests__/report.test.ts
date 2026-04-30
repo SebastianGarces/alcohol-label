@@ -60,6 +60,24 @@ const SONNET: EvalRun = {
   ],
 };
 
+const HAIKU: EvalRun = {
+  mode: "haiku-only",
+  totalCases: 3,
+  correctCases: 2,
+  accuracy: 2 / 3,
+  p50LatencyMs: 1500,
+  p95LatencyMs: 2800,
+  totalCostUsd: 0.02,
+  costPerLabelUsd: 0.02 / 3,
+  perFieldAccuracy: { brandName: { correct: 3, total: 3 } },
+  aborted: false,
+  results: [
+    caseRes("batch/01.jpg", "pass", "pass"),
+    caseRes("batch/02.jpg", "pass", "pass"),
+    caseRes("batch/03.jpg", "fail", "pass"),
+  ],
+};
+
 describe("eval > report", () => {
   it("renders deterministic markdown for a single-run input (no Headline line)", () => {
     const md = renderReport({
@@ -71,29 +89,47 @@ describe("eval > report", () => {
     expect(md).toContain("Generated: 2026-04-29T03:14:22Z");
     expect(md).toContain("Commit: abcdef1");
     expect(md).toContain("## Summary");
-    expect(md).toContain("**Tiered** (Haiku + Sonnet, default)");
+    expect(md).toContain("**Tiered** (Haiku extract + Sonnet warning/escalate, default)");
     expect(md).toContain("2/3 (66.7%)");
     expect(md).toContain("Per-field accuracy (Tiered mode)");
     expect(md).toContain("brandName | 3 | 3 | 100.0%");
     expect(md).toContain("Verdict differences (Tiered mode)");
     expect(md).toContain("03.jpg");
     expect(md).toContain("Methodology");
+    expect(md).toContain("Limitations");
     expect(md).not.toContain("**Headline:**");
     expect(md).not.toContain("Mode-by-mode failures");
   });
 
-  it("includes Headline line and mode comparison for multi-run input", () => {
+  it("includes Headline (Tiered vs Haiku-only) and mode comparison for multi-run input", () => {
     const md = renderReport({
-      runs: [TIERED, SONNET],
+      runs: [TIERED, HAIKU, SONNET],
       generatedAt: "2026-04-29T03:14:22Z",
       commitSha: "abcdef1",
     });
     expect(md).toContain("**Headline:**");
-    expect(md).toContain("**66.7%** as accurate as all-Sonnet");
-    expect(md).toContain("**25%** of the cost"); // 0.05 / 0.20 = 25%
+    // New headline frames Tiered vs Haiku-only directly.
+    expect(md).toContain("Tiered 66.7% accuracy");
+    expect(md).toContain("Haiku-only 66.7%");
+    // Haiku-only's $0.02 / Tiered's $0.05 = 40%
+    expect(md).toContain("**40%** of Tiered's cost");
+    // Both p95 in this fixture are < 5s, so the SLO line says both meet it.
+    expect(md).toContain("Both modes meet the <5s p95 SLO.");
     expect(md).toContain("## Mode-by-mode failures (compare runs)");
     expect(md).toContain("Tiered mode");
     expect(md).toContain("Sonnet-only mode");
+  });
+
+  it("flags Tiered SLO miss when its p95 exceeds 5s but Haiku-only is under", () => {
+    const md = renderReport({
+      runs: [
+        { ...TIERED, p95LatencyMs: 5400 },
+        { ...HAIKU, p95LatencyMs: 4300 },
+      ],
+      generatedAt: "2026-04-29T03:14:22Z",
+      commitSha: "abcdef1",
+    });
+    expect(md).toContain("Haiku-only meets the <5s p95 SLO; Tiered does not (5.4s)");
   });
 
   it("formats cost in USD with stable precision", () => {

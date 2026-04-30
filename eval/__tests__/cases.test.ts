@@ -4,11 +4,12 @@ import { Application } from "@/lib/schema/application";
 import { loadCases } from "../cases";
 
 describe("eval > cases", () => {
-  it("loads 29 cases (5 single + 24 batch)", () => {
+  it("loads 41 cases (5 single + 24 batch + 12 hard)", () => {
     const cases = loadCases();
-    expect(cases).toHaveLength(29);
+    expect(cases).toHaveLength(41);
     expect(cases.filter((c) => c.source === "single")).toHaveLength(5);
     expect(cases.filter((c) => c.source === "batch")).toHaveLength(24);
+    expect(cases.filter((c) => c.source === "hard")).toHaveLength(12);
   });
 
   it("every case's image exists on disk", () => {

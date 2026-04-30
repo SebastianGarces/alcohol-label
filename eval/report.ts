@@ -45,7 +45,7 @@ function getCommitSha(explicit?: string): string {
 function modeLabel(mode: string): string {
   switch (mode) {
     case "tiered":
-      return "**Tiered** (Haiku + Sonnet, default)";
+      return "**Tiered** (Haiku extract + Sonnet warning/escalate, default)";
     case "haiku-only":
       return "Haiku only";
     case "sonnet-only":
@@ -67,21 +67,40 @@ function summaryTable(runs: EvalRun[]): string {
   return [...header, ...runs.map(summaryRow)].join("\n");
 }
 
+const SLO_P95_MS = 5_000;
+
 function headlineLine(runs: EvalRun[]): string | null {
   const tiered = runs.find((r) => r.mode === "tiered");
-  const sonnet = runs.find((r) => r.mode === "sonnet-only");
-  if (!tiered || !sonnet) return null;
-  if (sonnet.accuracy === 0 || sonnet.totalCostUsd === 0) return null;
-  const acc = (tiered.accuracy / sonnet.accuracy) * 100;
-  const cost = (tiered.totalCostUsd / sonnet.totalCostUsd) * 100;
-  return `**Headline:** Tiered routing is **${acc.toFixed(1)}%** as accurate as all-Sonnet at **${cost.toFixed(0)}%** of the cost.`;
+  const haiku = runs.find((r) => r.mode === "haiku-only");
+  if (!tiered || !haiku) return null;
+
+  const tieredAcc = (tiered.accuracy * 100).toFixed(1);
+  const haikuAcc = (haiku.accuracy * 100).toFixed(1);
+  const tieredP95 = (tiered.p95LatencyMs / 1000).toFixed(1);
+  const haikuP95 = (haiku.p95LatencyMs / 1000).toFixed(1);
+  const costRatio = haiku.totalCostUsd > 0 ? (haiku.totalCostUsd / tiered.totalCostUsd) * 100 : 0;
+  const tieredHitsSlo = tiered.p95LatencyMs <= SLO_P95_MS;
+  const haikuHitsSlo = haiku.p95LatencyMs <= SLO_P95_MS;
+
+  const sloStrip =
+    tieredHitsSlo && haikuHitsSlo
+      ? "Both modes meet the <5s p95 SLO."
+      : !tieredHitsSlo && haikuHitsSlo
+        ? `Haiku-only meets the <5s p95 SLO; Tiered does not (${tieredP95}s).`
+        : !tieredHitsSlo && !haikuHitsSlo
+          ? `Neither mode meets the <5s p95 SLO (Tiered ${tieredP95}s, Haiku-only ${haikuP95}s).`
+          : `Tiered meets the <5s p95 SLO; Haiku-only does not (${haikuP95}s).`;
+
+  return [
+    `**Headline:** Tiered ${tieredAcc}% accuracy / p95 ${tieredP95}s vs Haiku-only ${haikuAcc}% / p95 ${haikuP95}s — Haiku-only runs at **${costRatio.toFixed(0)}%** of Tiered's cost. ${sloStrip}`,
+  ].join("\n");
 }
 
 function perFieldTable(run: EvalRun): string {
   const lines: string[] = [
     `## Per-field accuracy (${humanMode(run.mode)})`,
     "",
-    "> Per-field accuracy treats `match`, `fuzzy_match`, and `skipped` as correct (the field passed verification or was not required for this case). `mismatch` and `missing` are wrong. Fields not present on a given case are excluded from its denominator.",
+    "> Per-field accuracy scores **outcome correctness**, not label-match. For cases the manifest expects to pass/review, the field counts correct iff its status is `match`, `fuzzy_match`, or `skipped`. For expected-fail cases, the field counts correct iff the per-case verdict matched expectation — `mismatch` is the *right* outcome there, and shouldn't be counted as a verifier error. Fields not present on a given case are excluded from its denominator.",
     "",
     "| Field | Correct | Total | Accuracy |",
     "|---|---|---|---|",
@@ -153,17 +172,31 @@ function modeFailuresTable(runs: EvalRun[]): string {
   return lines.join("\n");
 }
 
-function methodologySection(): string {
+function methodologySection(runs: EvalRun[]): string {
+  const total = runs[0]?.totalCases ?? 0;
   return [
     "## Methodology",
     "",
-    "- Cases: 5 single-label samples + 24 batch samples (29 total).",
+    `- Cases: 5 single + 24 batch + 12 hard-conditions (${total} total). Hard cases apply sharp transforms (low-light, glare, tilt, blur, perspective shear) on top of clean batch labels — see \`scripts/generate-hard.ts\`.`,
     "- Each mode is a `Partial<VerifierDeps>` override on the production verifier (`lib/verifier/index.ts`). No code path forks.",
     "- All calls go through OpenRouter with `provider: { order: ['anthropic'], allow_fallbacks: false }` so model identity is pinned.",
     "- Cost computed from token usage × pricing in `lib/vlm/pricing.ts` (Anthropic public pricing for Claude 4.5 family; cached input billed at 1/10).",
     "- Latency is wall-clock per case, including image read and any in-process retries.",
-    "- Concurrency 4. Per-case timeout 60s. Total run cost cap $1.00 (aborts remaining cases on breach).",
+    "- Concurrency 4. Per-case timeout 60s. Total run cost cap $1.00 per mode (aborts remaining cases on breach).",
     "- Run with: `bun run eval:compare`",
+  ].join("\n");
+}
+
+function limitationsSection(runs: EvalRun[]): string {
+  const total = runs[0]?.totalCases ?? 0;
+  return [
+    "## Limitations",
+    "",
+    `- **Sample size (${total}).** Even with the hard set added, mode-vs-mode accuracy deltas of 1–2 cases are inside the noise floor. Treat ties as ties.`,
+    "- **Synthetic degradations.** The hard set is sharp transforms (modulate, blur, affine, white-radial composites) on top of clean SVG-rendered labels. Real phone shots add chromatic noise, JPEG compression artifacts, and motion blur the synthetic pipeline doesn't reproduce. Consider this an upper-bound on real-world accuracy.",
+    "- **No font diversity.** All labels use Georgia + Helvetica. A real production eval would source 50+ TTB-public COLA artwork samples across designers and printers.",
+    "- **Government warning is canonical English text only.** Spanish-language warnings (TTB allows them in some markets) and unusual layouts (warning split across two faces) are out of scope for this prototype.",
+    "- **Sonnet escalation/tiebreak rate is rare on this set.** If the route doesn't fire, you can't measure its contribution from these numbers — see telemetry counts (`telemetry.routerEscalations`) per case to confirm.",
   ].join("\n");
 }
 
@@ -200,7 +233,47 @@ export function renderReport(input: ReportInputs): string {
     lines.push(modeFailures, "");
   }
 
-  lines.push(methodologySection(), "");
+  if (tieredRun) {
+    lines.push(splitBySourceTable(input.runs), "");
+  }
+
+  lines.push(limitationsSection(input.runs), "");
+  lines.push(methodologySection(input.runs), "");
+  return lines.join("\n");
+}
+
+function splitBySourceTable(runs: EvalRun[]): string {
+  // Show accuracy split by source (single / batch / hard) per mode so the
+  // hard-conditions impact is visible. The runner doesn't carry source on
+  // results directly, so derive from caseId prefix.
+  const sources = ["single", "batch", "hard"] as const;
+  const sourceLabel: Record<(typeof sources)[number], string> = {
+    single: "single",
+    batch: "batch",
+    hard: "hard (degraded)",
+  };
+  const headerCells = ["Source", ...runs.map((r) => humanMode(r.mode))];
+  const lines: string[] = [
+    "## Accuracy by case source",
+    "",
+    "> Hard-conditions are sharp-degraded labels (low-light, glare, tilt, blur, shear). Numbers there are an upper bound — see Limitations.",
+    "",
+    `| ${headerCells.join(" | ")} |`,
+    `| ${headerCells.map(() => "---").join(" | ")} |`,
+  ];
+  for (const src of sources) {
+    const cells: string[] = [sourceLabel[src]];
+    for (const run of runs) {
+      const filtered = run.results.filter((r) => r.caseId.startsWith(`${src}/`));
+      if (filtered.length === 0) {
+        cells.push("—");
+        continue;
+      }
+      const correct = filtered.filter((r) => r.correct).length;
+      cells.push(`${correct}/${filtered.length} (${fmtPct(correct / filtered.length)})`);
+    }
+    lines.push(`| ${cells.join(" | ")} |`);
+  }
   return lines.join("\n");
 }
 

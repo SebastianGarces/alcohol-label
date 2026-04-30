@@ -9,7 +9,7 @@ export type ModeName = "tiered" | "haiku-only" | "sonnet-only";
 
 export const ALL_MODES: ModeName[] = ["tiered", "haiku-only", "sonnet-only"];
 
-// Tiered = production default (Haiku extract + Sonnet for warning/escalate/tiebreak).
+// Tiered = production default (Haiku extract + Sonnet warning/escalate/tiebreak).
 export const TIERED: Partial<VerifierDeps> = {};
 
 // Haiku-only = cheapest. Force every wrapper to use Haiku.
@@ -19,7 +19,7 @@ export const HAIKU_ONLY: Partial<VerifierDeps> = {
   tiebreak: (field, app, lab, opts) => tiebreak(field, app, lab, opts, MODELS.HAIKU),
 };
 
-// Sonnet-only = max accuracy. Force extract to use Sonnet (the others already do).
+// Sonnet-only = max accuracy on extract. Force extract to Sonnet (warning already Sonnet by default).
 export const SONNET_ONLY: Partial<VerifierDeps> = {
   extractLabel: (dataUrl, opts) => extractLabel(dataUrl, opts, MODELS.SONNET),
 };

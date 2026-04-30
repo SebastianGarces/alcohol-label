@@ -121,7 +121,7 @@ async function main(): Promise<void> {
   const cases = loadCases();
   // eslint-disable-next-line no-console
   console.log(
-    `[eval] loaded ${cases.length} cases (${cases.filter((c) => c.source === "single").length} single, ${cases.filter((c) => c.source === "batch").length} batch)`,
+    `[eval] loaded ${cases.length} cases (${cases.filter((c) => c.source === "single").length} single, ${cases.filter((c) => c.source === "batch").length} batch, ${cases.filter((c) => c.source === "hard").length} hard)`,
   );
   // eslint-disable-next-line no-console
   console.log(`[eval] running modes: ${modes.join(", ")}${dryRun ? " (dry-run)" : ""}`);
