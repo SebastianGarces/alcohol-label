@@ -47,7 +47,7 @@ bunx tsc --noEmit       # type check
        ▲             │  lib/match    ───┤   │            ▲                     ▲
        │             │  lib/vlm     ────┘   │            │ tool-use            │ ephemeral
        │             │  lib/canonical       │            │ structured output   │ prompt cache
-       │ FormData    │  sharp resize 1568px │            │                     │
+       │ FormData    │  sharp resize 1280px │            │                     │
        └─────────────┘──────────────────────┘            └─────────────────────┘
 ```
 
@@ -69,7 +69,7 @@ bunx tsc --noEmit       # type check
 | Forms / validation | react-hook-form + Zod | One Zod schema → form, server, and validation boundaries |
 | LLM gateway | OpenRouter (via `openai` SDK) | User has credits + abstracts model swaps |
 | Models | Anthropic Claude Haiku 4.5 (extract) + Sonnet 4.5 (warning + escalation) | Tiered routing: cheap-fast first, accurate second |
-| Image | sharp (rotate → resize 1568 → JPEG q85) | Strips EXIF, fixes orientation, sends a small JPEG |
+| Image | sharp (rotate → resize 1280 → JPEG q85) | Strips EXIF, fixes orientation, sends a small JPEG; 1280 keeps Tiered under the <5s p95 SLO |
 | Async state | @tanstack/react-query v5 | Single-call caching for the single-label flow |
 | CSV / diff | papaparse + diff | Batch CSV in/out + warning red-line view |
 | Errors | Sentry (Next.js wizard) | Source-mapped server traces |
@@ -111,7 +111,7 @@ Sentry org/project/auth-token are pulled by the Sentry build plugin from `.env.s
 
 ## Operations
 
-- **OpenRouter activity dashboard:** filtered by the `alcohol-label` API key (`X-Title: TTB Label Verifier`). Per-request cost, latency, model, and finish reason all visible. Aggregate over the past month: **$4.64 spend / 622 requests / 1.86M tokens** — split between Claude Sonnet 4.5 ($3.26, 314 req, 850K tok) and Claude Haiku 4.5 ($1.38, 308 req, 1.01M tok) with every request flowing through Anthropic and finishing as `tool_calls` (structured tool-use working as designed). Most of the recent volume is from two `bun run eval:compare` runs (~$1.34 each) that produce the committed `eval-results.md`.
+- **OpenRouter activity dashboard:** filtered by the `alcohol-label` API key (`X-Title: TTB Label Verifier`). Per-request cost, latency, model, and finish reason all visible. Most of the volume is from `bun run eval:compare` runs (~$1.75 each across the 41-case set × 3 modes) that produce the committed `eval-results.md`. Per-key spend cap is set to $5/day in the OpenRouter dashboard. Screenshots below were captured from a snapshot of the dashboard; live numbers will have moved on.
   - Activity view: ![OpenRouter activity (1mo aggregate)](dev-docs/screenshots/openrouter-activity.png)
   - Logs view: ![OpenRouter logs (per-request)](dev-docs/screenshots/openrouter-logs.png)
 - **Sentry project:** `alcohol-label/alcohol-label` (org/project) — runtime errors with source-mapped traces. Configured via the Next.js Sentry wizard; build-time source map upload runs from Vercel.
@@ -121,17 +121,20 @@ Sentry org/project/auth-token are pulled by the Sentry build plugin from `.env.s
 
 ## Evaluation
 
-Three execution modes (Tiered, Haiku-only, Sonnet-only), 29 golden samples (5 single-label + 24 batch), all calls go through real OpenRouter with `provider: { order: ['anthropic'], allow_fallbacks: false }` so model identity is pinned. Methodology, per-field accuracy, and per-case verdict diffs are committed in [`eval-results.md`](eval-results.md).
+Three execution modes (Tiered, Haiku-only, Sonnet-only), 41 golden samples (5 single + 24 batch + 12 hard-conditions), all calls go through real OpenRouter with `provider: { order: ['anthropic'], allow_fallbacks: false }` so model identity is pinned. Methodology, per-field accuracy, per-case verdict diffs, and accuracy split by case-source (single / batch / hard) are all committed in [`eval-results.md`](eval-results.md).
 
 | | **Tiered** (default) | Haiku-only | Sonnet-only |
 |---|---|---|---|
-| Verdict accuracy | 28/29 (96.6%) | 28/29 (96.6%) | 26/29 (89.7%) |
-| p50 latency | 4.0s | 3.2s | 5.5s |
-| Cost per label | $0.0144 | $0.0080 | $0.0239 |
+| Verdict accuracy | 40/41 (97.6%) | 38/41 (92.7%) | 37/41 (90.2%) |
+| p50 latency | 4.7s | 3.5s | 6.0s |
+| p95 latency | 6.7s | 4.4s | 7.0s |
+| Cost per label | $0.0144 | $0.0080 | $0.0202 |
 
-Tiered routing **outperforms** all-Sonnet (96.6% vs 89.7%) at 60% of the cost — Sonnet's verbatim transcription is slightly more "interpretive," which fails the verifier's strict matching on stylized labels (`02-black-pine-malt`, `09-old-anchor-rye`). The Haiku-only run hits the same accuracy as Tiered for $0.23 vs $0.42, which argues for promoting Haiku to the warning-extraction step in production rather than reflexively reaching for Sonnet.
+Tiered routing **outperforms** all-Sonnet (97.6% vs 90.2%) at 71% of the cost — Sonnet's verbatim transcription is slightly more "interpretive" and fails the verifier's strict matching on stylized labels. **Haiku-only is the only mode that hits the <5s p95 SLO (4.4s)**: it's 5pp behind Tiered on accuracy (the hard-conditions set is where it slips, 10/12 vs Tiered's 12/12), but at 56% of the cost it's the right starting place for production once the warning sub-call has its own focused eval. Tiered's p95 (6.7s) is over the 5s SLO on this run — within the noise floor of a 41-case set, but a real argument for the latency-vs-accuracy tradeoff being deliberate, not handwaved.
 
-Total run cost across all three modes: **$1.34**. Re-run with:
+The single Tiered miss is `10-velvet-crow-tequila.jpg`: an imported tequila with diacritics in the bottler name (`Destilería Velvet Crow`) and a separate "Imported by" block. The verifier returns REVIEW (not the expected PASS) because the VLM occasionally drops a combining mark — which is exactly what diacritic-aware normalization is designed to surface to a human, not silently pass.
+
+Total run cost across all three modes: **$1.75**. Re-run with:
 
 ```bash
 bun run eval            # Tiered only

@@ -54,9 +54,8 @@ app/
   about/page.tsx              # how-it-works page
   api/
     verify-one/route.ts       # batch unit endpoint (POST)
-    sample-labels/route.ts    # GET sample manifest
     warm/route.ts             # cold-start warmup
-  actions.ts                  # Server Actions: verifyLabel, explainRejection
+  actions.ts                  # Server Actions: verifyLabelAction, explainRejectionAction
 lib/
   verifier/                   # orchestrates extract → match → result
   vlm/                        # Anthropic client wrappers (Haiku, Sonnet)
@@ -94,11 +93,11 @@ public/
 - **Centralize model slugs in one place** (`lib/vlm/models.ts`) so swapping (Sonnet ↔ Opus, Haiku ↔ Flash) is a one-line change. OpenRouter's value is the abstraction — preserve it.
 - **Routing rule:** if any extracted field has confidence <0.7, re-extract that one field via Sonnet; merge result; mark `escalated=true` on that field.
 - **Parallel calls.** Field-extract Haiku call and warning Sonnet call run concurrently via `Promise.all` — they share no state.
-- **Prompt cache** the system prompt for Anthropic models. OpenRouter passes Anthropic's `cache_control: { type: 'ephemeral' }` markers through. Use OpenRouter's "OpenAI extra body" pattern: `{ extra_body: { anthropic_cache_control: ... } }` per OpenRouter docs, OR call with native messages.create-style payload via OpenRouter's `/chat/completions` and put cache markers in the system message blocks. Verify cache hits in OpenRouter's dashboard (`cached_tokens` field).
+- **Prompt cache** markers are wired on every system message via `buildCachedSystemMessage` in `lib/vlm/call.ts` — `cache_control: { type: 'ephemeral' }` is sent in the system content-block array, which OpenRouter passes through to Anthropic. **Known limitation:** Anthropic requires a ≥1024-token cached prefix; our system + tools + user-text comes to ~600-700 tokens, so cache hits don't fire today (`cached_tokens` stays 0 in the OpenRouter dashboard — verified empirically). Wiring is left in place because it's correct and harmless, and will start firing if/when system prompts grow (e.g., baking TTB regulation excerpts into the prompt). Don't remove the wiring without re-verifying.
+- **Image input:** sharp pipeline mandatory: `.rotate()` (EXIF auto-orient) → `.resize(MAX_EDGE_PX, MAX_EDGE_PX, {fit: 'inside'})` → `.jpeg({ quality: 85 })`. Send as a `data:image/jpeg;base64,...` URL inside an OpenAI-format `image_url` content part. `MAX_EDGE_PX = 1280` in `lib/vlm/image.ts` (chosen for the <5s p95 SLO; Anthropic's documented max is 1568, but 1280 is sufficient for ≥10pt body text on TTB labels and saves ~600ms of p95 latency).
 - **Structured output via tool use.** Use the OpenAI-style `tools` + `tool_choice: { type: 'function', function: { name: 'extract_label' } }`. Schema is the Zod schema converted with `zod-to-json-schema`. Parse `tool_calls[0].function.arguments` into the Zod schema; reject if it fails.
 - **Hard timeout 4.5s** per VLM call (`AbortController`). On timeout, return partial result with `timeout=true`; don't crash.
 - **Retry once** on 429 / 5xx with exp backoff (200ms, 800ms). On 401, do NOT retry — surface "Server config error."
-- **Image input:** sharp pipeline mandatory: `.rotate()` (EXIF auto-orient) → `.resize(1568, 1568, {fit: 'inside'})` → `.jpeg({ quality: 85 })`. Send as a `data:image/jpeg;base64,...` URL inside an OpenAI-format `image_url` content part. Anthropic's recommended max edge is 1568px (preserved via OpenRouter).
 - **Prompt-injection defense: extract-then-compare separation.** The VLM extracts; server-side `lib/match/` compares. The VLM never sees both label and application. Prompts ask for facts ("what is the brand name?"), never decisions ("does this label pass?").
 - **Provider routing on OpenRouter:** specify `provider: { order: ['anthropic'], allow_fallbacks: false }` in the request to pin Claude (avoid silent re-routing to a different provider that might break tool-use shape or vision). Confirm this matches OpenRouter's current API in `lib/vlm/`.
 

@@ -27,7 +27,7 @@ This drove three concrete habits:
 | Anthropic Claude (Haiku 4.5 + Sonnet 4.5) | Gemini 2.5 Flash | Gemini is ~3× cheaper input, but the gap is meaningless at take-home scale; Haiku 4.5 wins on stylized-font reading in informal tests; provider-pinned through OpenRouter to avoid silent reroutes |
 | VLM-only (no dedicated OCR) | Google Vision / Textract / PaddleOCR | A modern VLM is OCR + reasoning in one call; OCR services tie on stylized alcohol-label fonts and add latency |
 | No database; server is stateless; IndexedDB only for the I7 explanation cache | Neon Postgres / SQLite | Marcus's IT note ("not storing anything sensitive for this exercise") made statelessness the simplest defensible choice for a prototype; the batch is client-orchestrated in-memory and the 24-label demo button reseeds it in one click |
-| sharp pipeline (rotate → 1568px → JPEG q85) | Cloudinary / serverless image API | Anthropic's recommended max edge is 1568px; sharp also strips EXIF (security) and fixes orientation (Jenny's "weird angles" complaint) |
+| sharp pipeline (rotate → 1280px → JPEG q85) | Cloudinary / serverless image API | 1280 is enough for ≥10pt body text on TTB labels (Anthropic's max is 1568) and saves ~600ms of p95 latency; sharp also strips EXIF (security) and fixes orientation (Jenny's "weird angles" complaint) |
 | Server-side rate limit (in-memory per-IP) | Upstash / Redis | No infra to provision; per-instance counters are fine for prototype scale |
 | Biome + Vitest | ESLint + Prettier + Jest | Single tool for lint+format with zero config drift; Vitest is faster and matches Bun's defaults |
 
@@ -72,7 +72,7 @@ Every label produces between two and three LLM calls, and I chose the model for 
 - Hard `AbortController` timeout of 4.5s per VLM call (latency budget is 5s p95 end-to-end).
 - One retry on 429/5xx with `(200ms, 800ms)` exponential backoff. No retries on 401.
 - Provider pinning via OpenRouter: `provider: { order: ['anthropic'], allow_fallbacks: false }` so we don't silently get re-routed to a different vendor that might break tool-call shape or vision.
-- Anthropic ephemeral prompt caching (`cache_control: ephemeral`) on the system prompt — verified via `cached_tokens` in the OpenRouter dashboard.
+- Anthropic ephemeral prompt-cache markers (`cache_control: { type: 'ephemeral' }`) wired on every system message via `buildCachedSystemMessage`. **Caveat**: empirically verified that caching does *not* fire at our prompt size — Anthropic enforces a ≥1024-token cached-prefix minimum and our system + tools + user-text comes to ~600-700 tokens before the image. Confirmed via fetch-spy on the outgoing request body (markers present and correctly placed) and back-to-back identical extracts (`cached_tokens` stays 0). Wiring is intentionally left in place: it's correct and harmless, and if a future iteration bakes TTB regulation excerpts or canonical examples into the system prompt, caching will start firing without code changes. See `lib/vlm/call.ts` for the inline rationale and the would-be cache-cost line in `lib/vlm/pricing.ts`.
 
 **Prompt-injection defense (architectural, not heuristic):**
 
@@ -91,17 +91,18 @@ For prototype-stage observability I leaned on two artifacts: OpenRouter's per-ke
 For each field in `Application` (filtered by beverage type):
 
 1. Find corresponding `LabelExtract` field.
-2. **Normalize both:** NFKC → trim → collapse whitespace → smart quotes → straight quotes → lowercase.
-3. If equal → `MATCH (method: exact)`.
-4. Otherwise compute Jaro-Winkler similarity.
-   - `≥ 0.95` → `MATCH (method: normalized)` — Dave's "STONE'S THROW vs Stone's Throw" lands here.
+2. **Normalize both:** NFKD → strip combining marks (diacritics) → trim → collapse whitespace → smart quotes → straight quotes → lowercase.
+3. If raw values equal → `MATCH (method: exact)`.
+4. If normalized values equal → `REVIEW (status: fuzzy_match, method: normalized)` — Dave's "STONE'S THROW vs Stone's Throw" lands here, as does "Destilería" vs "Destileria". Surfaces the yellow "Match (normalized)" badge so an experienced agent confirms typographic equivalence.
+5. Otherwise compute Jaro-Winkler similarity.
+   - `≥ 0.95` → `REVIEW (status: fuzzy_match, method: normalized)` — for typos and near-misses.
    - `0.85 – 0.95` → call Sonnet for an LLM tiebreak; LLM verdict drives the result, marked `method: llm_tiebreak`.
    - `< 0.85` → `MISMATCH` with a character-level diff.
-5. **Field-specific overrides:**
+6. **Field-specific overrides:**
    - **ABV:** parse to numeric; equal to one decimal place; "45%" ≡ "45.0% alc/vol" ≡ "45 percent".
    - **Net contents:** parse "750 mL" / "750ml" / "750 ML" / "750 milliliters" to a single canonical.
    - **Addresses:** join multi-line, normalize separators; token-set ratio ≥ 0.9.
-6. **Wine 14% rule:** if labeled and application ABV cross the 14% line, FAIL with code `wine_14pp_rule` regardless of similarity (27 CFR Part 4 calls these out as different classes).
+7. **Wine 14% rule:** if labeled and application ABV cross the 14% line, FAIL with code `wine_14pp_rule` regardless of similarity (27 CFR Part 4 calls these out as different classes).
 
 ### 4.2 Government warning — two-prong exact verification
 
@@ -172,7 +173,7 @@ This is the table from `presearch.md → Loop 5`, with what was actually shipped
 | # | Criterion | What "Clearly Exceptional" means here | What I shipped |
 |---|---|---|---|
 | C1 | **Correctness & completeness** | Beverage-type-aware verifier; wine 14% rule; canonical warning byte-equal match | Phase 2 verifier core; 18 unit tests on the matching ladder + warning |
-| C2 | **Code quality & organization** | 35+ tests, Zod everywhere, strict TS, Biome zero-warning | 84 unit tests across 17 files; Zod boundary at every cross-module type; `bun run lint` clean; `bunx tsc --noEmit` clean |
+| C2 | **Code quality & organization** | 35+ tests, Zod everywhere, strict TS, Biome zero-warning | 135 unit tests across 21 files; Zod boundary at every cross-module type; `bun run lint` clean; `bunx tsc --noEmit` clean |
 | C3 | **Appropriate tech choices** | Justified vs alternatives in writeup | This document's §2; ADRs in `presearch.md` |
 | C4 | **UX & error handling** | Senior-friendly defaults; warning red-line; one-click explain | 18px base, ≥48px targets, single primary action per screen, status banner with icon+color+text, explicit loading copy ("Reading label…", "Verifying warning…"), all error states designed |
 | C5 | **Attention to requirements** | Every brief sentence mapped to a phase | `PRD.md → MVP Validation Checklist` traces all 16 brief requirements to a phase + a test; Janet, Dave, Jenny, Sarah named in the writeup |
@@ -195,7 +196,7 @@ This is the table from `presearch.md → Loop 5`, with what was actually shipped
 | I11 | Tiered model routing — Haiku → Sonnet escalation; visible badge + tooltip + summary note | `lib/verifier/index.ts`, `lib/vlm/escalate.ts`, `components/result/FieldRow.tsx`, `components/result/TieredRoutingNote.tsx` | Cost+latency optimization that's also visible |
 | I13 | Bottler ↔ importer category-swap detection — demotes MISSING → REVIEW with a "wrong slot" rationale when the application's bottler value appears on the label as the importer (or vice versa) | `lib/match/field.ts → detectCategorySwap`, `lib/verifier/index.ts → applyCategorySwapDetection` | Dave: "judgment, not just matching"; matches how an experienced agent reads imported labels |
 | I14 | Cost & latency telemetry surfaced in-product — every result card and the batch progress bar show the real $/call and ms/call from the OpenRouter usage payload, scored against pricing in `lib/vlm/pricing.ts` | `lib/vlm/call.ts`, `lib/vlm/pricing.ts`, `components/result/TelemetryFooter.tsx`, `components/batch/ProgressHeader.tsx` | Sarah's "5-second rule" + Marcus's $4.2M-rebuild quote — the verifier isn't a black box; reviewers can see it answer those concerns at a glance |
-| I15 | Golden-dataset eval harness with 3-mode comparison — runs all 29 samples through Tiered / Haiku-only / Sonnet-only against real OpenRouter, asserts verdict accuracy + p50/p95 + cost, commits the report so a reviewer can clone, re-run, and verify | `eval/`, `eval-results.md`, `bun run eval:compare` | The methodology a hiring partner can re-run — surfaced a counter-intuitive result (Sonnet-only is *worse* than Tiered or Haiku-only on stylized labels) that reshaped the production roadmap |
+| I15 | Golden-dataset eval harness with 3-mode comparison — runs all 41 samples (5 single + 24 batch + 12 hard-conditions) through Tiered / Haiku-only / Sonnet-only against real OpenRouter, asserts verdict accuracy + p50/p95 + cost, commits the report so a reviewer can clone, re-run, and verify | `eval/`, `eval-results.md`, `bun run eval:compare` | The methodology a hiring partner can re-run — surfaced a counter-intuitive result (Sonnet-only is *worse* than Tiered or Haiku-only on stylized labels) that reshaped the production roadmap |
 
 ### STRETCH (Phase 6)
 
@@ -238,7 +239,8 @@ Pulled from the brief; explicit acknowledgement that the prototype answers them 
 
 The eval harness (I15) shipped, so the regression-catch-for-prompt-drift item is done; the in-product telemetry footer (I14) shipped, so the latency-visibility item is done. What's left is production-readiness, in priority order:
 
-1. **Promote Haiku to the warning step.** The eval surfaced that Haiku-only matches Tiered's accuracy at 55% of the cost ($0.23 vs $0.42). Sonnet's escalation still earns its keep on low-confidence individual fields, but the warning sub-call is a candidate to demote — would need a focused eval on warning-only PASS/FAIL across the 29-case set to verify before flipping the switch in `lib/vlm/models.ts`.
-2. **Span-level tracing via Langfuse / Helicone / Braintrust.** OpenRouter's dashboard shows *what* happened per-call but not *why* — span-level tracing on extract / warning / escalate / tiebreak with `escalated=true` tags would make production debugging a five-minute job instead of a one-hour one. README has the production-roadmap rationale for not wiring it for the prototype.
-3. **Cron-driven golden-set eval.** `bun run eval:compare` nightly on main, deltas to Slack, model upgrades gated on no-accuracy-regression. Closest thing to "CI for the AI."
-4. **I5 streaming.** Render fields progressively as Haiku and Sonnet calls return. Perceived-latency win without changing the verifier — pure-frontend work and the next thing I'd touch if priority shifted from production-hardening to UX polish.
+1. **Land Tiered's p95 back under the 5s SLO.** The eval surfaced Tiered's p95 at 6.7s on the 41-case set — over the SLO, while Haiku-only sits at 4.4s. Sonnet's warning sub-call is the obvious candidate to demote: Haiku-only is 92.7% vs Tiered's 97.6% (a 2-case gap, all in the hard-conditions set), so a focused warning-only eval on Haiku is the gate. If Haiku reads the warning verbatim with the structural flags (`headerIsAllCaps`, `headerAppearsBold`) intact, flip `lib/vlm/models.ts` and the SLO is back. If it doesn't, the fallback is per-route Sonnet only on warnings whose Haiku confidence is low.
+2. **Promote diacritic + category-swap UX.** The single Tiered miss on `10-velvet-crow-tequila.jpg` is a VLM occasionally dropping a combining mark on `Destilería`. The verifier's REVIEW outcome is product-correct (the label *might* be wrong; the human should look), but in production this case wants a one-line "diacritic mismatch" explainer surfaced at the row level so the agent doesn't have to read the diff to understand it.
+3. **Span-level tracing via Langfuse / Helicone / Braintrust.** OpenRouter's dashboard shows *what* happened per-call but not *why* — span-level tracing on extract / warning / escalate / tiebreak with `escalated=true` tags would make production debugging a five-minute job instead of a one-hour one. README has the production-roadmap rationale for not wiring it for the prototype.
+4. **Cron-driven golden-set eval.** `bun run eval:compare` nightly on main, deltas to Slack, model upgrades gated on no-accuracy-regression. Closest thing to "CI for the AI."
+5. **I5 streaming.** Render fields progressively as Haiku and Sonnet calls return. Perceived-latency win without changing the verifier — pure-frontend work and the next thing I'd touch if priority shifted from production-hardening to UX polish.
