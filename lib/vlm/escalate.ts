@@ -3,6 +3,7 @@ import { fieldLabel } from "@/lib/match/field";
 import type { FieldKey } from "@/lib/schema/application";
 import type { ExtractedField } from "@/lib/schema/extract";
 import {
+  buildCachedSystemMessage,
   buildImageUserMessage,
   callChatWithTelemetry,
   parseToolCallArguments,
@@ -12,6 +13,10 @@ import {
 import { MODELS, type ModelSlug } from "./models";
 
 const TOOL_NAME = "extract_field";
+
+const SYSTEM_PROMPT =
+  "You re-read a single TTB label field with extra care. Return the value verbatim, " +
+  "or null if the field is genuinely absent. Never invent or infer.";
 
 const SingleField = z.object({
   value: z.string().nullable(),
@@ -30,12 +35,7 @@ export async function escalateField(
       max_tokens: 256,
       temperature: 0,
       messages: [
-        {
-          role: "system",
-          content:
-            "You re-read a single TTB label field with extra care. Return the value verbatim, " +
-            "or null if the field is genuinely absent. Never invent or infer.",
-        },
+        buildCachedSystemMessage(SYSTEM_PROMPT),
         buildImageUserMessage(
           `Re-read the ${fieldLabel(field)} on this label. Use the extract_field tool.`,
           dataUrl,

@@ -1,7 +1,9 @@
 // Browser-only helper: downscale large images on the client before upload, so we
 // minimize 413 / oversize pushback on the server side.
 
-export const CLIENT_MAX_EDGE_PX = 1568;
+// Matches MAX_EDGE_PX in lib/vlm/image.ts — server re-resizes anyway, but
+// downscaling client-side keeps uploads small and reduces 413s.
+export const CLIENT_MAX_EDGE_PX = 1280;
 export const CLIENT_TARGET_BYTES = 1.5 * 1024 * 1024;
 export const CLIENT_RESIZE_THRESHOLD_BYTES = 1.5 * 1024 * 1024;
 

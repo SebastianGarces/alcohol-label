@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { fieldLabel } from "@/lib/match/field";
 import type { FieldKey } from "@/lib/schema/application";
-import { callChat, parseToolCallArguments, type VlmCallOptions } from "./call";
+import {
+  buildCachedSystemMessage,
+  callChat,
+  parseToolCallArguments,
+  type VlmCallOptions,
+} from "./call";
 import { MODELS } from "./models";
 
 const TOOL_NAME = "explain_rejection";
@@ -72,7 +77,7 @@ export async function explainRejection(
       max_tokens: 384,
       temperature: 0.2,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        buildCachedSystemMessage(SYSTEM_PROMPT),
         { role: "user", content: buildPrompt(input) },
       ],
       tools: [

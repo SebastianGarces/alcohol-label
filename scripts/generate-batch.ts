@@ -32,6 +32,9 @@ type Variant = {
   labelNet: string;
   bottlerLine1: string;
   bottlerLine2: string;
+  /** Optional separate importer block (rendered above the bottler block). */
+  importerLine1?: string;
+  importerLine2?: string;
   warningHeader: string;
   warningHeaderBold: boolean;
   /** What the CSV says — the application data */
@@ -163,7 +166,7 @@ const variants: Variant[] = [
     ...passWarning,
   },
   {
-    // smart-match: label all-caps, application title case
+    // smart-match: label all-caps, application title case → REVIEW (Dave's case)
     slug: "stones-throw-allcaps",
     labelBrand: "STONE'S THROW",
     labelClass: "Kentucky Straight Bourbon Whiskey",
@@ -247,15 +250,17 @@ const variants: Variant[] = [
     labelClass: "Tequila Reposado",
     labelAbv: "40% alc/vol",
     labelNet: "750 mL",
-    bottlerLine1: "Imported by Velvet Crow Spirits LLC",
-    bottlerLine2: "88 Mission Street, San Diego, CA",
+    bottlerLine1: "Bottled by Destilería Velvet Crow",
+    bottlerLine2: "Carretera Tequila-Magdalena Km 12, Jalisco, Mexico",
+    importerLine1: "Imported by Velvet Crow Spirits LLC",
+    importerLine2: "88 Mission Street, San Diego, CA",
     appBeverageType: "distilled_spirits",
     appBrand: "Velvet Crow",
     appClass: "Tequila Reposado",
     appAbv: "40%",
     appNet: "750 mL",
-    appBottler: "Velvet Crow Spirits LLC",
-    appBottlerAddress: "88 Mission Street, San Diego, CA",
+    appBottler: "Destilería Velvet Crow",
+    appBottlerAddress: "Carretera Tequila-Magdalena Km 12, Jalisco, Mexico",
     appImporter: "Velvet Crow Spirits LLC",
     appImporterAddress: "88 Mission Street, San Diego, CA",
     appCountryOfOrigin: "Mexico",
@@ -342,7 +347,7 @@ const variants: Variant[] = [
     ...passWarning,
   },
   {
-    // smart-match: label all-caps brand
+    // smart-match: label all-caps brand → REVIEW (Dave's case)
     slug: "hollow-oak-allcaps",
     labelBrand: "HOLLOW OAK",
     labelClass: "Cabernet Sauvignon",
@@ -497,7 +502,7 @@ const variants: Variant[] = [
     ...passWarning,
   },
   {
-    // smart-match: label all-caps brand
+    // smart-match: label all-caps brand → REVIEW (Dave's case)
     slug: "north-pier-allcaps",
     labelBrand: "NORTH PIER",
     labelClass: "India Pale Ale",
@@ -612,10 +617,27 @@ function buildSvg(v: Variant): string {
     )
     .join("\n  ")}
 
-  <text x="${W / 2}" y="${H - 110}" font-family="Helvetica, Arial, sans-serif"
+  ${
+    v.importerLine1
+      ? `<text x="${W / 2}" y="${H - 188}" font-family="Helvetica, Arial, sans-serif"
+        font-size="18" fill="${palette.ink}" text-anchor="middle">${escapeXml(v.bottlerLine1)}</text>
+  <text x="${W / 2}" y="${H - 162}" font-family="Helvetica, Arial, sans-serif"
+        font-size="18" fill="${palette.ink}" text-anchor="middle">${escapeXml(v.bottlerLine2)}</text>
+  <text x="${W / 2}" y="${H - 132}" font-family="Helvetica, Arial, sans-serif"
+        font-size="18" fill="${palette.ink}" text-anchor="middle">${escapeXml(v.importerLine1)}</text>
+  <text x="${W / 2}" y="${H - 106}" font-family="Helvetica, Arial, sans-serif"
+        font-size="18" fill="${palette.ink}" text-anchor="middle">${escapeXml(v.importerLine2 ?? "")}</text>`
+      : `<text x="${W / 2}" y="${H - 110}" font-family="Helvetica, Arial, sans-serif"
         font-size="18" fill="${palette.ink}" text-anchor="middle">${escapeXml(v.bottlerLine1)}</text>
   <text x="${W / 2}" y="${H - 84}" font-family="Helvetica, Arial, sans-serif"
-        font-size="18" fill="${palette.ink}" text-anchor="middle">${escapeXml(v.bottlerLine2)}</text>
+        font-size="18" fill="${palette.ink}" text-anchor="middle">${escapeXml(v.bottlerLine2)}</text>`
+  }
+  ${
+    v.appCountryOfOrigin
+      ? `<text x="${W / 2}" y="${H - 58}" font-family="Helvetica, Arial, sans-serif"
+        font-size="18" font-weight="600" fill="${palette.ink}" text-anchor="middle">Product of ${escapeXml(v.appCountryOfOrigin)}</text>`
+      : ""
+  }
 </svg>`;
 }
 

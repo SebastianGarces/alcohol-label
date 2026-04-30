@@ -2,6 +2,7 @@ import { z } from "zod";
 import { fieldLabel } from "@/lib/match/field";
 import type { FieldKey } from "@/lib/schema/application";
 import {
+  buildCachedSystemMessage,
   callChatWithTelemetry,
   parseToolCallArguments,
   type VlmCallOptions,
@@ -10,6 +11,11 @@ import {
 import { MODELS, type ModelSlug } from "./models";
 
 const TOOL_NAME = "tiebreak_decision";
+
+const SYSTEM_PROMPT =
+  "You decide whether two strings denote the same TTB-label field. " +
+  "Treat case, punctuation, smart-quote, and whitespace differences as the same. " +
+  "Treat different words or numbers as different. Be strict but not pedantic.";
 
 const Decision = z.object({
   same: z.boolean(),
@@ -36,16 +42,7 @@ export async function tiebreak(
       model,
       max_tokens: 256,
       temperature: 0,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You decide whether two strings denote the same TTB-label field. " +
-            "Treat case, punctuation, smart-quote, and whitespace differences as the same. " +
-            "Treat different words or numbers as different. Be strict but not pedantic.",
-        },
-        { role: "user", content: prompt },
-      ],
+      messages: [buildCachedSystemMessage(SYSTEM_PROMPT), { role: "user", content: prompt }],
       tools: [
         {
           type: "function",

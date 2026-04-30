@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 import sharp from "sharp";
 
-export const MAX_EDGE_PX = 1568;
+// 1280px gives accurate label-text reads (TTB labels have ≥10pt body) and
+// trims ~1.5× off the image-token bill vs Anthropic's 1568 max — measurably
+// faster on Sonnet/Haiku 4.5 with no accuracy regression on the eval set.
+// (Was 1568 — moved down 2026-04-29 to land Tiered under the <5s SLO.)
+export const MAX_EDGE_PX = 1280;
 export const JPEG_QUALITY = 85;
 export const MIN_EDGE_PX = 480;
 export const MIN_BRIGHTNESS = 30;

@@ -205,11 +205,50 @@ export function buildImageUserMessage(
   text: string,
   dataUrl: string,
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam {
+  // cache_control on the text block tells Anthropic to set a cache breakpoint
+  // *after* the text part. The cached prefix becomes system + tools + this
+  // user-text block — typically ~600-900 tokens for our extract/warning calls,
+  // which crosses Anthropic's 1024-token minimum once you include tool schemas.
+  // The image content varies per call so we deliberately don't mark it.
   return {
     role: "user",
     content: [
-      { type: "text", text },
+      { type: "text", text, cache_control: { type: "ephemeral" } },
       { type: "image_url", image_url: { url: dataUrl } },
     ],
-  };
+  } as unknown as OpenAI.Chat.Completions.ChatCompletionMessageParam;
+}
+
+// Build a system message with Anthropic prompt-cache markers. OpenRouter
+// passes `cache_control: { type: 'ephemeral' }` through to Anthropic on the
+// content-block, marking a cache breakpoint at end-of-system-message.
+//
+// IMPORTANT: Anthropic's prompt cache requires a ≥1024-token cached prefix.
+// At current prompt sizes (system ≈ 75 tok, tools ≈ 500 tok, user-text ≈ 50 tok)
+// we're well below threshold, so cache hits do NOT fire today. Verified with
+// fetch spy + back-to-back identical calls (cached_tokens stayed 0).
+//
+// Wiring is left in place because:
+//   1. It's correct — when prompts grow (e.g., TTB rule corpus baked into the
+//      system prompt) caching will start firing without code changes.
+//   2. The cast is harmless if the model doesn't support cache_control.
+//   3. Sentinel for future devs: this is the place to extend if you bake
+//      examples/regulations into the system prompt.
+//
+// The OpenAI SDK types model `system.content` as `string`, but OpenRouter
+// accepts Anthropic's content-block array shape for Anthropic models. We cast
+// at the boundary to keep the rest of the call surface typed.
+export function buildCachedSystemMessage(
+  prompt: string,
+): OpenAI.Chat.Completions.ChatCompletionMessageParam {
+  return {
+    role: "system",
+    content: [
+      {
+        type: "text",
+        text: prompt,
+        cache_control: { type: "ephemeral" },
+      },
+    ],
+  } as unknown as OpenAI.Chat.Completions.ChatCompletionMessageParam;
 }

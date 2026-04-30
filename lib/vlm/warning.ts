@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { WarningExtract } from "@/lib/schema/extract";
 import {
+  buildCachedSystemMessage,
   buildImageUserMessage,
   callChatWithTelemetry,
   parseToolCallArguments,
@@ -33,10 +34,7 @@ export async function extractWarning(
       model,
       max_tokens: 1024,
       temperature: 0,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        buildImageUserMessage(PROMPT, dataUrl),
-      ],
+      messages: [buildCachedSystemMessage(SYSTEM_PROMPT), buildImageUserMessage(PROMPT, dataUrl)],
       tools: [
         {
           type: "function",

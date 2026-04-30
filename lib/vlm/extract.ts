@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { LabelExtract } from "@/lib/schema/extract";
 import {
+  buildCachedSystemMessage,
   buildImageUserMessage,
   callChatWithTelemetry,
   parseToolCallArguments,
@@ -35,7 +36,7 @@ export async function extractLabel(
       max_tokens: 1024,
       temperature: 0,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        buildCachedSystemMessage(SYSTEM_PROMPT),
         buildImageUserMessage(EXTRACT_PROMPT, dataUrl),
       ],
       tools: [
